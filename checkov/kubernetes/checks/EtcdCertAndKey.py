@@ -14,19 +14,17 @@ class EtcdCertAndKey(BaseK8Check):
         return f'{conf["parent"]} - {conf["name"]}' if conf.get('name') else conf["parent"]
 
     def scan_spec_conf(self, conf):
-        if conf.get("command") is not None:
-            if "etcd" in conf["command"]:
-                hasCertCommand = False
-                hasKeyCommand = False
-                for command in conf["command"]:
-                    if command.startswith("--cert-file"):
-                        hasCertCommand = True
-                    elif command.startswith("--key-file"):
-                        hasKeyCommand = True
-                    if hasCertCommand and hasKeyCommand:
-                        return CheckResult.PASSED
-                return CheckResult.FAILED
-           
-        return CheckResult.PASSED
+        if conf.get("command") is None or "etcd" not in conf["command"]:
+            return CheckResult.PASSED
+        hasCertCommand = False
+        hasKeyCommand = False
+        for command in conf["command"]:
+            if command.startswith("--cert-file"):
+                hasCertCommand = True
+            elif command.startswith("--key-file"):
+                hasKeyCommand = True
+            if hasCertCommand and hasKeyCommand:
+                return CheckResult.PASSED
+        return CheckResult.FAILED
 
 check = EtcdCertAndKey()

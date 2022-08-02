@@ -17,11 +17,13 @@ class ECSClusterContainerInsights(BaseResourceCheck):
         :param conf: AWS::ECS::Cluster configuration
         :return: <CheckResult>
         """
-        if 'Properties' in conf.keys():
-            if 'ClusterSettings' in conf['Properties'].keys():
-                for setting in conf['Properties']['ClusterSettings']:
-                    if setting['Name'] == 'containerInsights' and setting['Value'] == 'enabled':
-                        return CheckResult.PASSED
+        if (
+            'Properties' in conf.keys()
+            and 'ClusterSettings' in conf['Properties'].keys()
+        ):
+            for setting in conf['Properties']['ClusterSettings']:
+                if setting['Name'] == 'containerInsights' and setting['Value'] == 'enabled':
+                    return CheckResult.PASSED
         return CheckResult.FAILED
 
 check = ECSClusterContainerInsights()

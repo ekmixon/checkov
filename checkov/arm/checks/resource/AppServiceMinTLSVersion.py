@@ -12,11 +12,13 @@ class AppServiceMinTLSVersion(BaseResourceCheck):
         super().__init__(name=name, id=id, categories=categories, supported_resources=supported_resources)
 
     def scan_resource_conf(self, conf):
-        if "properties" in conf:
-            if "siteConfig" in conf["properties"]:
-                if "minTlsVersion" in conf["properties"]["siteConfig"]:
-                    if conf["properties"]["siteConfig"]["minTlsVersion"] == '1.2':
-                        return CheckResult.PASSED
+        if (
+            "properties" in conf
+            and "siteConfig" in conf["properties"]
+            and "minTlsVersion" in conf["properties"]["siteConfig"]
+            and conf["properties"]["siteConfig"]["minTlsVersion"] == '1.2'
+        ):
+            return CheckResult.PASSED
         return CheckResult.FAILED
 
 check = AppServiceMinTLSVersion()

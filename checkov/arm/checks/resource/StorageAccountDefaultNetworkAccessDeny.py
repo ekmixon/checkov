@@ -18,18 +18,20 @@ class StorageAccountDefaultNetworkAccessDeny(BaseResourceCheck):
     def scan_resource_conf(self, conf):
         if "apiVersion" in conf:
             # Fail if apiVersion < 2017 as you could not set networkAcls
-            year = force_int(conf["apiVersion"][0:4])
+            year = force_int(conf["apiVersion"][:4])
 
             if year is None:
                 return CheckResult.UNKNOWN
             elif year < 2017:
                 return CheckResult.FAILED
 
-        if "properties" in conf:
-            if "networkAcls" in conf["properties"]:
-                if "defaultAction" in conf["properties"]["networkAcls"]:
-                    if conf["properties"]["networkAcls"]["defaultAction"] == "Deny":
-                        return CheckResult.PASSED
+        if (
+            "properties" in conf
+            and "networkAcls" in conf["properties"]
+            and "defaultAction" in conf["properties"]["networkAcls"]
+            and conf["properties"]["networkAcls"]["defaultAction"] == "Deny"
+        ):
+            return CheckResult.PASSED
         return CheckResult.FAILED
 
 

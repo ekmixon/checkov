@@ -98,7 +98,7 @@ class RunnerRegistry(object):
                         use_bc_ids=config.output_bc_ids,
                     )
                     if url:
-                        print("More details: {}".format(url))
+                        print(f"More details: {url}")
             exit_codes.append(
                 report.get_exit_code(
                     config.soft_fail, config.soft_fail_on, config.hard_fail_on
@@ -124,11 +124,7 @@ class RunnerRegistry(object):
                 print(json.dumps(report_jsons[0], indent=4))
             else:
                 print(json.dumps(report_jsons, indent=4))
-        # if config.output == "cli":
-        # bc_integration.get_report_to_platform(config,scan_reports)
-
-        exit_code = 1 if 1 in exit_codes else 0
-        return exit_code
+        return 1 if 1 in exit_codes else 0
 
     def filter_runner_framework(self):
         if not self.runner_filter:
@@ -137,10 +133,12 @@ class RunnerRegistry(object):
             return
         if self.runner_filter.framework == "all":
             return
-        filtered_runners = []
-        for runner in self.runners:
-            if runner.check_type in self.runner_filter.framework:
-                filtered_runners.append(runner)
+        filtered_runners = [
+            runner
+            for runner in self.runners
+            if runner.check_type in self.runner_filter.framework
+        ]
+
         self.runners = filtered_runners
         return
 

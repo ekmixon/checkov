@@ -23,16 +23,14 @@ class ImageDigest(BaseK8Check):
         return f'{conf["parent"]} - {conf["name"]}' if conf.get('name') else conf["parent"]
 
     def scan_spec_conf(self, conf):
-        if "image" in conf:
-
-            # The @ indicates there is a digest. It's technically possible to use a tag as well, but it doesn't make
-            # a difference. So, this @ is all we need to pass the check.
-            image_conf = conf["image"]
-            if isinstance(image_conf,str):
-                has_digest = '@' in image_conf
-                return CheckResult.PASSED if has_digest else CheckResult.FAILED
-        else:
+        if "image" not in conf:
             return CheckResult.FAILED
+        # The @ indicates there is a digest. It's technically possible to use a tag as well, but it doesn't make
+        # a difference. So, this @ is all we need to pass the check.
+        image_conf = conf["image"]
+        if isinstance(image_conf,str):
+            has_digest = '@' in image_conf
+            return CheckResult.PASSED if has_digest else CheckResult.FAILED
 
 
 check = ImageDigest()

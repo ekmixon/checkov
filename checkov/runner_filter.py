@@ -31,17 +31,15 @@ class RunnerFilter(object):
 
         if skip_framework is None:
             self.framework = framework
-        else:
-            if isinstance(skip_framework, str):
-                if framework == "all":
-                    if runners is None:
-                        runners = []
+        elif isinstance(skip_framework, str):
+            if framework == "all":
+                if runners is None:
+                    runners = []
 
-                    selected_frameworks = list(set(runners) - set(skip_framework.split(",")))
-                    self.framework = ",".join(selected_frameworks)
-                else:
-                    selected_frameworks = list(set(framework.split(",")) - set(skip_framework.split(",")))
-                    self.framework = ",".join(selected_frameworks)
+                selected_frameworks = list(set(runners) - set(skip_framework.split(",")))
+            else:
+                selected_frameworks = list(set(framework.split(",")) - set(skip_framework.split(",")))
+            self.framework = ",".join(selected_frameworks)
         logging.info(f"Resultant set of frameworks (removing skipped frameworks): {self.framework}")
 
         self.download_external_modules = download_external_modules
@@ -54,13 +52,14 @@ class RunnerFilter(object):
         if RunnerFilter.is_external_check(check_id) and self.all_external:
             pass  # enabled unless skipped
         elif self.checks:
-            if check_id in self.checks or bc_check_id in self.checks:
-                return True
-            else:
-                return False
-        if self.skip_checks and any((fnmatch.fnmatch(check_id, pattern) or (bc_check_id and fnmatch.fnmatch(bc_check_id, pattern))) for pattern in self.skip_checks):
-            return False
-        return True
+            return check_id in self.checks or bc_check_id in self.checks
+        return not self.skip_checks or not any(
+            (
+                fnmatch.fnmatch(check_id, pattern)
+                or (bc_check_id and fnmatch.fnmatch(bc_check_id, pattern))
+            )
+            for pattern in self.skip_checks
+        )
 
     @staticmethod
     def notify_external_check(check_id: str) -> None:

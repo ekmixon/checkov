@@ -16,7 +16,7 @@ from checkov.terraform.graph_builder.graph_components.attribute_names import Cus
 class ComplexConnectionSolver(BaseConnectionSolver):
     def __init__(self, solvers: Optional[List[BaseSolver]], operator: str) -> None:
         self.solver_type = SolverType.COMPLEX_CONNECTION
-        self.solvers = solvers if solvers else []
+        self.solvers = solvers or []
         self.operator = operator
 
         resource_types = set()

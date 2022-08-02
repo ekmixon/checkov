@@ -14,17 +14,14 @@ class KubeControllerManagerServiceAccountCredentials(BaseK8Check):
         return f'{conf["parent"]} - {conf["name"]}' if conf.get('name') else conf["parent"]
 
     def scan_spec_conf(self, conf):
-        if conf.get("command") is not None:
-            if "kube-controller-manager" in conf["command"]:
-                for command in conf["command"]:
-                    if command.startswith('--use-service-account-credentials'):
-                        value = command.split("=")[1]
-                        if value == 'true':
-                            return CheckResult.PASSED
-                        else:
-                            return CheckResult.FAILED
-            return CheckResult.UNKNOWN
-        return CheckResult.PASSED
+        if conf.get("command") is None:
+            return CheckResult.PASSED
+        if "kube-controller-manager" in conf["command"]:
+            for command in conf["command"]:
+                if command.startswith('--use-service-account-credentials'):
+                    value = command.split("=")[1]
+                    return CheckResult.PASSED if value == 'true' else CheckResult.FAILED
+        return CheckResult.UNKNOWN
 
 
 check = KubeControllerManagerServiceAccountCredentials()

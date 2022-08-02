@@ -19,10 +19,10 @@ class MultiSignatureMeta(ABCMeta):
         for base in bases:
             for name, value in getattr(base, "__multi_signature_methods__", {}).items():
                 if inspect.isfunction(value) and hasattr(value, "__multi_signature_wrappers__"):
-                    multi_signature_wrappers = getattr(value, "__multi_signature_wrappers__", False)
-                    if multi_signature_wrappers:
-                        current_function = multi_signatures.get(name)
-                        if current_function:
+                    if multi_signature_wrappers := getattr(
+                        value, "__multi_signature_wrappers__", False
+                    ):
+                        if current_function := multi_signatures.get(name):
                             current_function.__multi_signature_wrappers__.update(multi_signature_wrappers)
                         else:
                             multi_signatures[name] = value
@@ -37,15 +37,17 @@ class MultiSignatureMeta(ABCMeta):
             # convert args into a tuple
             args, varargs, varkw = arguments
             arguments = tuple(args), varargs, varkw
-            get_wrapper = value.__multi_signature_wrappers__.get(tuple(arguments), None)
-            if get_wrapper:
-                wrapper = get_wrapper(cls, wrapped)
-                update_wrapper(wrapper, wrapped)
-                setattr(cls, name, wrapper)
-            else:
+            if not (
+                get_wrapper := value.__multi_signature_wrappers__.get(
+                    tuple(arguments), None
+                )
+            ):
                 # unknown implementation
                 raise NotImplementedError(f"The signature {arguments} for {name} is not supported.")
 
+            wrapper = get_wrapper(cls, wrapped)
+            update_wrapper(wrapper, wrapped)
+            setattr(cls, name, wrapper)
         return cls
 
 

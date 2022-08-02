@@ -15,10 +15,13 @@ class KubeletHostnameOverride(BaseK8Check):
         return f'{conf["parent"]} - {conf["name"]}' if conf.get('name') else conf["parent"]
 
     def scan_spec_conf(self, conf):
-        if "command" in conf:
-            if "kubelet" in conf["command"]:            
-                if "--hostname-override" in [arg.split("=")[0] for arg in conf["command"]]:
-                    return CheckResult.FAILED
+        if (
+            "command" in conf
+            and "kubelet" in conf["command"]
+            and "--hostname-override"
+            in [arg.split("=")[0] for arg in conf["command"]]
+        ):
+            return CheckResult.FAILED
 
         return CheckResult.PASSED
 

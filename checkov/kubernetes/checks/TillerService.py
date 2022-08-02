@@ -14,26 +14,23 @@ class TillerService(BaseK8Check):
 
     def get_resource_id(self, conf):
         if "namespace" in conf["metadata"]:
-            return "{}.{}.{}".format(conf["kind"], conf["metadata"]["name"], conf["metadata"]["namespace"])
+            return f'{conf["kind"]}.{conf["metadata"]["name"]}.{conf["metadata"]["namespace"]}'
+
         else:
-            return "{}.{}.default".format(conf["kind"], conf["metadata"]["name"])
+            return f'{conf["kind"]}.{conf["metadata"]["name"]}.default'
 
     def scan_spec_conf(self, conf):
 
-        metadata = conf.get('metadata')
-        if metadata:
+        if metadata := conf.get('metadata'):
             if 'name' in metadata and 'tiller' in str(metadata['name']).lower():
                 return CheckResult.FAILED
-            labels = metadata.get('labels')
-            if labels:
+            if labels := metadata.get('labels'):
                 for v in labels.values():
                     if 'tiller' in str(v).lower():
                         return CheckResult.FAILED
 
-        spec = conf.get('spec')
-        if spec:
-            selector = spec.get('selector')
-            if selector:
+        if spec := conf.get('spec'):
+            if selector := spec.get('selector'):
                 for v in selector.values():
                     if 'tiller' in str(v).lower():
                         return CheckResult.FAILED

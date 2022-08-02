@@ -11,11 +11,13 @@ class DocDBTLS(BaseResourceCheck):
         super().__init__(name=name, id=id, categories=categories, supported_resources=supported_resources)
 
     def scan_resource_conf(self, conf):
-        if 'Properties' in conf.keys():
-            if 'Parameters' in conf['Properties'].keys():
-                if 'tls' in conf['Properties']['Parameters'].keys():
-                    if conf['Properties']['Parameters']['tls'] == "disabled":
-                        return CheckResult.FAILED
+        if (
+            'Properties' in conf.keys()
+            and 'Parameters' in conf['Properties'].keys()
+            and 'tls' in conf['Properties']['Parameters'].keys()
+            and conf['Properties']['Parameters']['tls'] == "disabled"
+        ):
+            return CheckResult.FAILED
         return CheckResult.PASSED
 
 

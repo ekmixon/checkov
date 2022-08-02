@@ -19,17 +19,22 @@ class AKSApiServerAuthorizedIpRanges(BaseResourceCheck):
                 return CheckResult.FAILED
             elif conf["apiVersion"] in ["2019-02-01", "2019-04-01", "2019-06-01"]:
                 # apiServerAuthorizedIPRanges in Preview in these API versions
-                if "properties" in conf:
-                    if "apiServerAuthorizedIPRanges" in conf["properties"]:
-                        if conf["properties"]["apiServerAuthorizedIPRanges"]:
-                            return CheckResult.PASSED
-            else:
-                # ApiServerAuthorizedIpRanges fully supported in all future API versions
-                if "properties" in conf:
-                    if "apiServerAccessProfile" in conf["properties"]:
-                        if "authorizedIPRanges" in conf["properties"]["apiServerAccessProfile"]:
-                            if conf["properties"]["apiServerAccessProfile"]["authorizedIPRanges"]:
-                                return CheckResult.PASSED
+                if (
+                    "properties" in conf
+                    and "apiServerAuthorizedIPRanges" in conf["properties"]
+                    and conf["properties"]["apiServerAuthorizedIPRanges"]
+                ):
+                    return CheckResult.PASSED
+            elif (
+                "properties" in conf
+                and "apiServerAccessProfile" in conf["properties"]
+                and "authorizedIPRanges"
+                in conf["properties"]["apiServerAccessProfile"]
+                and conf["properties"]["apiServerAccessProfile"][
+                    "authorizedIPRanges"
+                ]
+            ):
+                return CheckResult.PASSED
         return CheckResult.FAILED
 
 check = AKSApiServerAuthorizedIpRanges()

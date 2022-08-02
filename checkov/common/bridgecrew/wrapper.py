@@ -38,21 +38,25 @@ def reduce_scan_reports(scan_reports):
     :param scan_reports: List of checkov output reports
     :return: dictionary of
     """
-    reduced_scan_reports = {}
-    for report in scan_reports:
-        reduced_scan_reports[report.check_type] = \
-            {
-                "checks": {
-                    "passed_checks": [
-                        {k: getattr(check, k) for k in check_reduced_keys}
-                        for check in report.passed_checks],
-                    "failed_checks": [
-                        {k: getattr(check, k) for k in check_reduced_keys}
-                        for check in report.failed_checks],
-                    "skipped_checks": [
-                        {k: getattr(check, k) for k in check_reduced_keys}
-                        for check in report.skipped_checks]}}
-    return reduced_scan_reports
+    return {
+        report.check_type: {
+            "checks": {
+                "passed_checks": [
+                    {k: getattr(check, k) for k in check_reduced_keys}
+                    for check in report.passed_checks
+                ],
+                "failed_checks": [
+                    {k: getattr(check, k) for k in check_reduced_keys}
+                    for check in report.failed_checks
+                ],
+                "skipped_checks": [
+                    {k: getattr(check, k) for k in check_reduced_keys}
+                    for check in report.skipped_checks
+                ],
+            }
+        }
+        for report in scan_reports
+    }
 
 
 def persist_checks_results(reduced_scan_reports, s3_client, bucket, full_repo_object_key):

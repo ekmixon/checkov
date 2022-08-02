@@ -16,25 +16,32 @@ class EC2PublicIP(BaseResourceCheck):
                 network_interfaces = conf['Properties']['NetworkInterfaces']
                 if isinstance(network_interfaces, list):
                     for network_interface in network_interfaces:
-                        if 'AssociatePublicIpAddress' in network_interface.keys():
-                            if network_interface['AssociatePublicIpAddress'] is True:
-                                return CheckResult.FAILED
-                        else:
+                        if (
+                            'AssociatePublicIpAddress'
+                            not in network_interface.keys()
+                        ):
                             # If not made explicit then default is true if default subnet and false otherwise.
                             # This info can not be derived from template so result is unknown.
                             # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-network-iface-embedded.html#Properties%23AssociatePublicIpAddress
-                            return CheckResult.UNKNOWN    
+                            return CheckResult.UNKNOWN
+                        if network_interface['AssociatePublicIpAddress'] is True:
+                            return CheckResult.FAILED
             # For 'AWS::EC2::LaunchTemplate'
-            if 'LaunchTemplateData' in conf['Properties'].keys():
-                if 'NetworkInterfaces' in conf['Properties']['LaunchTemplateData'].keys():
-                    network_interfaces = conf['Properties']['LaunchTemplateData']['NetworkInterfaces']
-                    if isinstance(network_interfaces, list):
-                        for network_interface in network_interfaces:
-                            if 'AssociatePublicIpAddress' in network_interface.keys():
-                                if network_interface['AssociatePublicIpAddress'] is True:
-                                    return CheckResult.FAILED
-                            else:
-                                return CheckResult.UNKNOWN
+            if (
+                'LaunchTemplateData' in conf['Properties'].keys()
+                and 'NetworkInterfaces'
+                in conf['Properties']['LaunchTemplateData'].keys()
+            ):
+                network_interfaces = conf['Properties']['LaunchTemplateData']['NetworkInterfaces']
+                if isinstance(network_interfaces, list):
+                    for network_interface in network_interfaces:
+                        if (
+                            'AssociatePublicIpAddress'
+                            not in network_interface.keys()
+                        ):
+                            return CheckResult.UNKNOWN
+                        if network_interface['AssociatePublicIpAddress'] is True:
+                            return CheckResult.FAILED
         return CheckResult.PASSED
 
 

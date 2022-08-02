@@ -12,10 +12,12 @@ class SecurityCenterContactEmailAlert(BaseResourceCheck):
         super().__init__(name=name, id=id, categories=categories, supported_resources=supported_resources)
 
     def scan_resource_conf(self, conf):
-        if "properties" in conf:
-            if "alertNotifications" in conf["properties"]:
-                if str(conf["properties"]["alertNotifications"]).lower() == "on":
-                    return CheckResult.PASSED
+        if (
+            "properties" in conf
+            and "alertNotifications" in conf["properties"]
+            and str(conf["properties"]["alertNotifications"]).lower() == "on"
+        ):
+            return CheckResult.PASSED
         return CheckResult.FAILED
 
 check = SecurityCenterContactEmailAlert()

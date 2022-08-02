@@ -33,9 +33,11 @@ class Runner(BaseRunner):
             excluded_paths = []
         if files:
             logging.info('Running with --file argument; checking for Helm Chart.yaml files')
-            for file in files:
-                if os.path.basename(file) == 'Chart.yaml':
-                    chart_directories.append(os.path.dirname(file))
+            chart_directories.extend(
+                os.path.dirname(file)
+                for file in files
+                if os.path.basename(file) == 'Chart.yaml'
+            )
 
         if root_folder:
             for root, d_names, f_names in os.walk(root_folder):
@@ -50,16 +52,18 @@ class Runner(BaseRunner):
     def parse_helm_dependency_output(o):
         output = o.decode('utf-8')
         chart_dependencies={}
-        if "WARNING" in output:
-            #Helm  output showing no deps, example: 'WARNING: no dependencies at helm-charts/charts/prometheus-kafka-exporter/charts\n'
-            pass
-        else: 
+        if "WARNING" not in output:
             lines = output.split('\n')
             for line in lines:
-                if line != "":
-                    if not "NAME" in line:
-                        chart_name, chart_version, chart_repo, chart_status = line.split("\t")
-                        chart_dependencies.update({chart_name.rstrip():{'chart_name': chart_name.rstrip(), 'chart_version': chart_version.rstrip(), 'chart_repo': chart_repo.rstrip(), 'chart_status': chart_status.rstrip()}})
+                if line != "" and "NAME" not in line:
+                    chart_name, chart_version, chart_repo, chart_status = line.split("\t")
+                    chart_dependencies[chart_name.rstrip()] = {
+                        'chart_name': chart_name.rstrip(),
+                        'chart_version': chart_version.rstrip(),
+                        'chart_repo': chart_repo.rstrip(),
+                        'chart_status': chart_status.rstrip(),
+                    }
+
         return chart_dependencies
 
     @staticmethod
@@ -79,13 +83,12 @@ class Runner(BaseRunner):
             proc = subprocess.Popen([self.helm_command, 'version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE) #nosec
             o, e = proc.communicate()
             oString = str(o, 'utf-8')
-            if "Version:" in oString:
-                helmVersionOutput = oString[oString.find(':')+2 : oString.find(',')-1]
-                if "v3" in helmVersionOutput:
-                    logging.info(f"Found working version of {self.check_type} dependancies: {helmVersionOutput}")
-                    return None
-            else:
+            if "Version:" not in oString:
                 return self.check_type
+            helmVersionOutput = oString[oString.find(':')+2 : oString.find(',')-1]
+            if "v3" in helmVersionOutput:
+                logging.info(f"Found working version of {self.check_type} dependancies: {helmVersionOutput}")
+                return None
         except Exception:
             logging.info(f"Error running necessary tools to process {self.check_type} checks.")
             return self.check_type
@@ -103,7 +106,7 @@ class Runner(BaseRunner):
         chart_directories = self.find_chart_directories(root_folder, files, runner_filter.excluded_paths)
 
         report = Report(self.check_type)
-    
+
         for chart_dir in chart_directories:
             #chart_name = os.path.basename(chart_dir)
             chart_meta = self.parse_helm_chart_details(chart_dir)
@@ -117,7 +120,7 @@ class Runner(BaseRunner):
                         logging.info(f"V1 API chart without Chart.yaml dependancies. Skipping chart dependancy list for {chart_meta['name']} at dir: {chart_dir}. Working dir: {target_dir}. Error details: {str(e, 'utf-8')}")       
                     else: 
                         logging.info(f"Error processing helm dependancies for {chart_meta['name']} at source dir: {chart_dir}. Working dir: {target_dir}. Error details: {str(e, 'utf-8')}")
-                        
+
                 self.parse_helm_dependency_output(o)
 
                 try:
@@ -128,7 +131,7 @@ class Runner(BaseRunner):
 
                 except Exception:
                     logging.info(f"Error processing helm chart {chart_meta['name']} at dir: {chart_dir}. Working dir: {target_dir}. Error details: {str(e, 'utf-8')}")
-            
+
                 output = str(o, 'utf-8')
                 reader = io.StringIO(output)
                 cur_source_file = None
@@ -156,7 +159,7 @@ class Runner(BaseRunner):
                             os.makedirs(parent, exist_ok=True)
                             cur_source_file = source
                             cur_writer = open(os.path.join(target_dir, source), 'a')
-                        cur_writer.write('---' + os.linesep)
+                        cur_writer.write(f'---{os.linesep}')
                         cur_writer.write(s + os.linesep)
 
                         last_line_dashes = False
@@ -187,8 +190,8 @@ class Runner(BaseRunner):
                     with tempfile.TemporaryDirectory() as save_error_dir:
                         logging.debug(f"Error running k8s scan on {chart_meta['name']}. Scan dir: {target_dir}. Saved context dir: {save_error_dir}")
                         shutil.move(target_dir, save_error_dir) 
-                    
-        
+
+
         ## TODO: Export helm dependancies for the chart we've extracted in chart_dependencies
         return report
 
@@ -226,11 +229,10 @@ def get_skipped_checks(entity_conf):
     metadata = {}
     if not isinstance(entity_conf,dict):
         return skipped
-    if entity_conf["kind"] == "containers" or entity_conf["kind"] == "initContainers":
+    if entity_conf["kind"] in ["containers", "initContainers"]:
         metadata = entity_conf["parent_metadata"]
-    else:
-        if "metadata" in entity_conf.keys():
-            metadata = entity_conf["metadata"]
+    elif "metadata" in entity_conf.keys():
+        metadata = entity_conf["metadata"]
     if "annotations" in metadata.keys() and metadata["annotations"] is not None:
         for key in metadata["annotations"].keys():
             skipped_item = {}
@@ -260,13 +262,11 @@ def find_lines(node, kv):
         return node
     if isinstance(node, list):
         for i in node:
-            for x in find_lines(i, kv):
-                yield x
+            yield from find_lines(i, kv)
     elif isinstance(node, dict):
         if kv in node:
             yield node[kv]
         for j in node.values():
-            for x in find_lines(j, kv):
-                yield x
+            yield from find_lines(j, kv)
 
 

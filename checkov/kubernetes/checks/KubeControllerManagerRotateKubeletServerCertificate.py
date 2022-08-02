@@ -16,13 +16,12 @@ class KubeControllerManagerRotateKubeletServerCertificate(BaseK8Check):
         return f'{conf["parent"]} - {conf["name"]}' if conf.get('name') else conf["parent"]
 
     def scan_spec_conf(self, conf):
-        if "command" in conf:
-            if "kube-controller-manager" in conf["command"]:
-                for cmd in conf["command"]:
-                    if cmd.startswith("--feature-gates"):
-                        value = cmd[cmd.index("=")+1:]
-                        if 'RotateKubeletServerCertificate=false' in value:
-                            return CheckResult.FAILED
+        if "command" in conf and "kube-controller-manager" in conf["command"]:
+            for cmd in conf["command"]:
+                if cmd.startswith("--feature-gates"):
+                    value = cmd[cmd.index("=")+1:]
+                    if 'RotateKubeletServerCertificate=false' in value:
+                        return CheckResult.FAILED
 
         return CheckResult.PASSED
 

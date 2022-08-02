@@ -13,18 +13,24 @@ class PeerClientCertAuthTrue(BaseK8Check):
 
     def get_resource_id(self, conf):
         if "namespace" in conf["metadata"]:
-            return "{}.{}.{}".format(conf["kind"], conf["metadata"]["name"], conf["metadata"]["namespace"])
+            return f'{conf["kind"]}.{conf["metadata"]["name"]}.{conf["metadata"]["namespace"]}'
+
         else:
-            return "{}.{}.default".format(conf["kind"], conf["metadata"]["name"])
+            return f'{conf["kind"]}.{conf["metadata"]["name"]}.default'
 
     def scan_spec_conf(self, conf, entity_type=None):
         if conf.get("metadata")['name'] == 'etcd':
             containers = conf.get('spec')['containers']
-            for container in containers:
-                if container.get("args") is not None:
-                    if '--peer-client-cert-auth=true' not in container['args']:
-                        return CheckResult.FAILED
-            return CheckResult.PASSED
+            return next(
+                (
+                    CheckResult.FAILED
+                    for container in containers
+                    if container.get("args") is not None
+                    and '--peer-client-cert-auth=true' not in container['args']
+                ),
+                CheckResult.PASSED,
+            )
+
         return CheckResult.UNKNOWN
 
 

@@ -12,10 +12,12 @@ class SecurityCenterContactEmailAlertAdmins(BaseResourceCheck):
         super().__init__(name=name, id=id, categories=categories, supported_resources=supported_resources)
 
     def scan_resource_conf(self, conf):
-        if "properties" in conf:
-            if "alertsToAdmins" in conf["properties"]:
-                if str(conf["properties"]["alertsToAdmins"]).lower() == "on":
-                    return CheckResult.PASSED
+        if (
+            "properties" in conf
+            and "alertsToAdmins" in conf["properties"]
+            and str(conf["properties"]["alertsToAdmins"]).lower() == "on"
+        ):
+            return CheckResult.PASSED
         return CheckResult.FAILED
 
 check = SecurityCenterContactEmailAlertAdmins()

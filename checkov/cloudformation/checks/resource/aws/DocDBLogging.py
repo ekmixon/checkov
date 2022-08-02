@@ -12,10 +12,15 @@ class DocDBLogging(BaseResourceCheck):
 
     def scan_resource_conf(self, conf):
         log_types = ["profiler", "audit"]
-        if 'Properties' in conf.keys():
-            if 'EnableCloudwatchLogsExports' in conf['Properties'].keys():
-                if all(elem in conf['Properties']['EnableCloudwatchLogsExports'] for elem in log_types):
-                    return CheckResult.PASSED
+        if (
+            'Properties' in conf.keys()
+            and 'EnableCloudwatchLogsExports' in conf['Properties'].keys()
+            and all(
+                elem in conf['Properties']['EnableCloudwatchLogsExports']
+                for elem in log_types
+            )
+        ):
+            return CheckResult.PASSED
         return CheckResult.FAILED
 
 

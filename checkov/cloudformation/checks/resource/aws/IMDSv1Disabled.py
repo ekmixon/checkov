@@ -18,12 +18,16 @@ class IMDSv1Disabled(BaseResourceCheck):
                 launch_template_data = properties['LaunchTemplateData']
             if 'MetadataOptions' in launch_template_data.keys():
                 metadata_options = launch_template_data['MetadataOptions']
-                if 'HttpEndpoint' in metadata_options.keys():
-                    if metadata_options['HttpEndpoint'] == "disabled":
-                        return CheckResult.PASSED
-                if 'HttpTokens' in metadata_options.keys():
-                    if metadata_options['HttpTokens'] == "required":
-                        return CheckResult.PASSED
+                if (
+                    'HttpEndpoint' in metadata_options.keys()
+                    and metadata_options['HttpEndpoint'] == "disabled"
+                ):
+                    return CheckResult.PASSED
+                if (
+                    'HttpTokens' in metadata_options.keys()
+                    and metadata_options['HttpTokens'] == "required"
+                ):
+                    return CheckResult.PASSED
         return CheckResult.FAILED
 
 

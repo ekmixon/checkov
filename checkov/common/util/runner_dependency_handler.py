@@ -39,7 +39,7 @@ class RunnerDependencyHandler():
                 if result is not None:
                     runner_names.append(result)
                     runners_with_unmatched_deps.append(runner)
-        
+
         if runners_with_unmatched_deps:
             logging.info(f"The following frameworks will automatically be disabled due to missing system dependencies: {','.join(runner_names)}")
             for runner in runners_with_unmatched_deps:

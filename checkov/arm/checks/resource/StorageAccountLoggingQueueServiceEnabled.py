@@ -19,19 +19,28 @@ class StorageAccountLoggingQueueServiceEnabled(BaseResourceCheck):
         super().__init__(name=name, id=id, categories=categories, supported_resources=supported_resources)
 
     def scan_resource_conf(self, conf):
-        if "properties" in conf:
-            if "logs" in conf["properties"]:
-                if conf["properties"]["logs"]:
-                    storage = {}
-                    for log in conf["properties"]["logs"]:
-                        if "category" in log and "enabled" in log:
-                            if str(log["enabled"]).lower() == "true":
-                                storage[log["category"]] = True
-                    if "StorageRead" in storage.keys() and \
-                            "StorageWrite" in storage.keys() and \
-                            "StorageDelete" in storage.keys():
-                        if storage["StorageRead"] and storage["StorageWrite"] and storage["StorageDelete"]:
-                            return CheckResult.PASSED
+        if (
+            "properties" in conf
+            and "logs" in conf["properties"]
+            and conf["properties"]["logs"]
+        ):
+            storage = {
+                log["category"]: True
+                for log in conf["properties"]["logs"]
+                if "category" in log
+                and "enabled" in log
+                and str(log["enabled"]).lower() == "true"
+            }
+
+            if (
+                "StorageRead" in storage
+                and "StorageWrite" in storage
+                and "StorageDelete" in storage
+                and storage["StorageRead"]
+                and storage["StorageWrite"]
+                and storage["StorageDelete"]
+            ):
+                return CheckResult.PASSED
         return CheckResult.FAILED
 
 check = StorageAccountLoggingQueueServiceEnabled()

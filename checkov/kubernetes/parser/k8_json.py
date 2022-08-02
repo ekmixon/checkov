@@ -11,18 +11,14 @@ def loads(filename):
         content = fp.read()
 
 
-        content = "[" + content + "]"
+        content = f"[{content}]"
         content = content.replace('}{', '},{')
         content = content.replace('}\n{', '},\n{')
 
         template_temp = list(yaml.load_all(content, Loader=SafeLineLoader))
 
     # Convert an empty file to an empty dict
-    if template_temp is None:
-        template = {}
-    else:
-        template = template_temp[0]
-
+    template = {} if template_temp is None else template_temp[0]
     return template
 
 

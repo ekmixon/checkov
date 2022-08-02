@@ -28,7 +28,7 @@ class Registry(BaseRegistry):
 
     def _load_checks_from_dir(self, directory: str) -> None:
         dir = os.path.expanduser(directory)
-        self.logger.info("Loading external checks from {}".format(dir))
+        self.logger.info(f"Loading external checks from {dir}")
         for root, d_names, f_names in os.walk(dir):
             self.logger.info(f"Searching through {d_names} and {f_names}")
             for file in f_names:
@@ -42,7 +42,7 @@ class Registry(BaseRegistry):
                         check = self.parser.parse_raw_check(
                             check_json, resources_types=self._get_resource_types(check_json)
                         )
-                        if not any([c for c in self.checks if check.id == c.id]):
+                        if not any(c for c in self.checks if check.id == c.id):
                             # Note the external check; used in the should_run_check logic
                             RunnerFilter.notify_external_check(check.id)
                             self.checks.append(check)

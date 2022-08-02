@@ -14,14 +14,18 @@ class AppServiceIdentity(BaseResourceCheck):
         super().__init__(name=name, id=id, categories=categories, supported_resources=supported_resources)
 
     def scan_resource_conf(self, conf):
-        if "identity" in conf:
-            if "type" in conf["identity"]:
-                if conf["identity"]["type"] == "SystemAssigned":
-                    return CheckResult.PASSED
-                elif conf["identity"]["type"] == "UserAssigned":
-                    if "userAssignedIdentities" in conf["identity"]:
-                        if conf["identity"]["userAssignedIdentities"]:
-                            return CheckResult.PASSED
+        if (
+            "identity" in conf
+            and "type" in conf["identity"]
+            and (
+                conf["identity"]["type"] != "SystemAssigned"
+                and conf["identity"]["type"] == "UserAssigned"
+                and "userAssignedIdentities" in conf["identity"]
+                and conf["identity"]["userAssignedIdentities"]
+                or conf["identity"]["type"] == "SystemAssigned"
+            )
+        ):
+            return CheckResult.PASSED
         return CheckResult.FAILED
 
 check = AppServiceIdentity()

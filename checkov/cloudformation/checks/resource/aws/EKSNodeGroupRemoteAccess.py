@@ -10,13 +10,15 @@ class EKSNodeGroupRemoteAccess(BaseResourceCheck):
         super().__init__(name=name, id=id, categories=categories, supported_resources=supported_resources)
 
     def scan_resource_conf(self, conf):
-        if 'Properties' in conf.keys():
-            if 'RemoteAccess' in conf['Properties'].keys():
-                if 'Ec2SshKey' in conf['Properties']['RemoteAccess'].keys():
-                    if 'SourceSecurityGroups' in conf['Properties']['RemoteAccess'].keys():
-                        return CheckResult.PASSED
-                    else:
-                        return CheckResult.FAILED
+        if (
+            'Properties' in conf.keys()
+            and 'RemoteAccess' in conf['Properties'].keys()
+            and 'Ec2SshKey' in conf['Properties']['RemoteAccess'].keys()
+        ):
+            if 'SourceSecurityGroups' in conf['Properties']['RemoteAccess'].keys():
+                return CheckResult.PASSED
+            else:
+                return CheckResult.FAILED
         return CheckResult.PASSED
 
 

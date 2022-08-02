@@ -13,17 +13,16 @@ class ApiServerKubeletClientCertAndKey(BaseK8Check):
         return f'{conf["parent"]} - {conf["name"]}' if conf.get('name') else conf["parent"]
 
     def scan_spec_conf(self, conf):
-        if conf.get("command") is not None:
-            if "kube-apiserver" in conf["command"]:
-                hasCertCommand = False
-                hasKeyCommand = False
-                for command in conf["command"]:
-                    if command.startswith("--kubelet-client-certificate"):
-                        hasCertCommand = True
-                    elif command.startswith("--kubelet-client-key"):
-                        hasKeyCommand = True
-                return CheckResult.PASSED if hasCertCommand and hasKeyCommand else CheckResult.FAILED
-           
+        if conf.get("command") is not None and "kube-apiserver" in conf["command"]:
+            hasCertCommand = False
+            hasKeyCommand = False
+            for command in conf["command"]:
+                if command.startswith("--kubelet-client-certificate"):
+                    hasCertCommand = True
+                elif command.startswith("--kubelet-client-key"):
+                    hasKeyCommand = True
+            return CheckResult.PASSED if hasCertCommand and hasKeyCommand else CheckResult.FAILED
+
         return CheckResult.PASSED
 
 check = ApiServerKubeletClientCertAndKey()

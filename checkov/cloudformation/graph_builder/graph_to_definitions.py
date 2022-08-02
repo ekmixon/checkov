@@ -30,6 +30,5 @@ def convert_graph_vertices_to_definitions(
 
 
 def add_breadcrumbs(vertex: CloudformationBlock, breadcrumbs: Dict[str, Dict[str, Any]], relative_block_path: str) -> None:
-    vertex_breadcrumbs = vertex.breadcrumbs
-    if vertex_breadcrumbs:
+    if vertex_breadcrumbs := vertex.breadcrumbs:
         breadcrumbs.setdefault(relative_block_path, {})[vertex.name] = vertex_breadcrumbs

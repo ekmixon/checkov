@@ -12,10 +12,12 @@ class AppServiceHTTPSOnly(BaseResourceCheck):
         super().__init__(name=name, id=id, categories=categories, supported_resources=supported_resources)
 
     def scan_resource_conf(self, conf):
-        if "properties" in conf:
-            if "httpsOnly" in conf["properties"]:
-                if str(conf["properties"]["httpsOnly"]).lower() == "true":
-                    return CheckResult.PASSED
+        if (
+            "properties" in conf
+            and "httpsOnly" in conf["properties"]
+            and str(conf["properties"]["httpsOnly"]).lower() == "true"
+        ):
+            return CheckResult.PASSED
         return CheckResult.FAILED
 
 check = AppServiceHTTPSOnly()

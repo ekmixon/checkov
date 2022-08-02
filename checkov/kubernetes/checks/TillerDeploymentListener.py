@@ -19,12 +19,11 @@ class TillerDeploymentListener(BaseK8Check):
     def scan_spec_conf(self, conf):
 
         is_tiller = Tiller.is_tiller(conf)
-        
+
         if not is_tiller:
             return CheckResult.UNKNOWN
 
-        args = conf.get('args')
-        if args:
+        if args := conf.get('args'):
             for arg in args:
                 if '--listen' in arg and ('localhost' in arg or '127.0.0.1' in arg):
                     return CheckResult.PASSED

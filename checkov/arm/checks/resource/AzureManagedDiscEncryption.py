@@ -10,11 +10,14 @@ class AzureManagedDiscEncryption(BaseResourceCheck):
         super().__init__(name=name, id=id, categories=categories, supported_resources=supported_resources)
 
     def scan_resource_conf(self, conf):
-        if "properties" in conf:
-            if "encryptionSettings" in conf["properties"]:
-                if "enabled" in conf["properties"]["encryptionSettings"]:
-                    if str(conf["properties"]["encryptionSettings"]["enabled"]).lower() == "true":
-                        return CheckResult.PASSED
+        if (
+            "properties" in conf
+            and "encryptionSettings" in conf["properties"]
+            and "enabled" in conf["properties"]["encryptionSettings"]
+            and str(conf["properties"]["encryptionSettings"]["enabled"]).lower()
+            == "true"
+        ):
+            return CheckResult.PASSED
         return CheckResult.FAILED
 
 check = AzureManagedDiscEncryption()

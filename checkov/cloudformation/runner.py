@@ -79,9 +79,9 @@ class Runner(BaseRunner):
 
             if isinstance(definition, dict) and CloudformationTemplateSections.RESOURCES in definition.keys():
                 for resource_name, resource in definition[CloudformationTemplateSections.RESOURCES].items():
-                    resource_id = ContextParser.extract_cf_resource_id(resource, resource_name)
-                    # check that the resource can be parsed as a CF resource
-                    if resource_id:
+                    if resource_id := ContextParser.extract_cf_resource_id(
+                        resource, resource_name
+                    ):
                         resource_context = self.context[file_abs_path][
                             CloudformationTemplateSections.RESOURCES][resource_name]
                         entity_lines_range = [resource_context['start_line'], resource_context['end_line']]
@@ -129,16 +129,23 @@ class Runner(BaseRunner):
                     check_result=check_result,
                     code_block=entity_context.get("code_lines"),
                     file_path=entity.get(CustomAttributes.FILE_PATH),
-                    file_line_range=[entity_context.get("start_line"), entity_context.get("end_line")],
+                    file_line_range=[
+                        entity_context.get("start_line"),
+                        entity_context.get("end_line"),
+                    ],
                     resource=entity.get(CustomAttributes.ID),
                     evaluations={},
                     check_class=check.__class__.__module__,
                     file_abs_path=entity_file_abs_path,
-                    entity_tags={} if not entity.get("Tags") else cfn_utils.parse_entity_tags(entity.get("Tags")),
+                    entity_tags=cfn_utils.parse_entity_tags(entity.get("Tags"))
+                    if entity.get("Tags")
+                    else {},
                 )
+
                 if self.breadcrumbs:
-                    breadcrumb = self.breadcrumbs.get(record.file_path, {}).get(record.resource)
-                    if breadcrumb:
+                    if breadcrumb := self.breadcrumbs.get(
+                        record.file_path, {}
+                    ).get(record.resource):
                         record = GraphRecord(record, breadcrumb)
 
                 report.add_record(record=record)

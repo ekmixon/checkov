@@ -19,9 +19,10 @@ class PodSecurityContext(BaseK8Check):
 
     def get_resource_id(self, conf):
         if "namespace" in conf["metadata"]:
-            return "{}.{}.{}".format(conf["kind"], conf["metadata"]["name"], conf["metadata"]["namespace"])
+            return f'{conf["kind"]}.{conf["metadata"]["name"]}.{conf["metadata"]["namespace"]}'
+
         else:
-            return "{}.{}.default".format(conf["kind"], conf["metadata"]["name"])
+            return f'{conf["kind"]}.{conf["metadata"]["name"]}.default'
 
     def scan_spec_conf(self, conf):
         spec = {}
@@ -30,20 +31,20 @@ class PodSecurityContext(BaseK8Check):
             if "spec" in conf:
                 spec = conf["spec"]
         elif conf['kind'] == 'CronJob':
-            if "spec" in conf:
-                if "jobTemplate" in conf["spec"]:
-                    if "spec" in conf["spec"]["jobTemplate"]:
-                        if "template" in conf["spec"]["jobTemplate"]["spec"]:
-                            if "spec" in conf["spec"]["jobTemplate"]["spec"]["template"]:
-                                spec = conf["spec"]["jobTemplate"]["spec"]["template"]["spec"]
+            if (
+                "spec" in conf
+                and "jobTemplate" in conf["spec"]
+                and "spec" in conf["spec"]["jobTemplate"]
+                and "template" in conf["spec"]["jobTemplate"]["spec"]
+                and "spec" in conf["spec"]["jobTemplate"]["spec"]["template"]
+            ):
+                spec = conf["spec"]["jobTemplate"]["spec"]["template"]["spec"]
         else:
             inner_spec = self.get_inner_entry(conf, "spec")
-            spec = inner_spec if inner_spec else spec
+            spec = inner_spec or spec
 
-        if spec:
-            if "securityContext" in spec:
-                if spec["securityContext"]:
-                    return CheckResult.PASSED
+        if spec and "securityContext" in spec and spec["securityContext"]:
+            return CheckResult.PASSED
         return CheckResult.FAILED
 
 check = PodSecurityContext()

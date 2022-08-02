@@ -15,25 +15,30 @@ class RootContainersPSP(BaseK8Check):
         super().__init__(name=name, id=id, categories=categories, supported_entities=supported_kind)
 
     def get_resource_id(self, conf):
-        if "metadata" in conf:
-            if "name" in conf["metadata"]:
-                return 'PodSecurityPolicy.{}'.format(conf["metadata"]["name"])
+        if "metadata" in conf and "name" in conf["metadata"]:
+            return f'PodSecurityPolicy.{conf["metadata"]["name"]}'
         return 'PodSecurityPolicy.spec.runAsUser.rule'
 
     def scan_spec_conf(self, conf):
-        if "spec" in conf:
-            if "runAsUser" in conf["spec"]:
-                if "rule" in conf["spec"]["runAsUser"]:
-                    inspected_value = conf["spec"]["runAsUser"]["rule"]
-                    if inspected_value == "MustRunAsNonRoot":
-                        return CheckResult.PASSED
-                    elif inspected_value == "MustRunAs":
-                        if "ranges" in conf["spec"]["runAsUser"]:
-                            for range in conf["spec"]["runAsUser"]["ranges"]:
-                                #if conf["spec"]["runAsUser"]["ranges"]["min"] == 0:
-                                if range["min"] == 0:
-                                    return CheckResult.FAILED
-                            return CheckResult.PASSED
+        if (
+            "spec" in conf
+            and "runAsUser" in conf["spec"]
+            and "rule" in conf["spec"]["runAsUser"]
+        ):
+            inspected_value = conf["spec"]["runAsUser"]["rule"]
+            if inspected_value == "MustRunAs":
+                if "ranges" in conf["spec"]["runAsUser"]:
+                    return next(
+                        (
+                            CheckResult.FAILED
+                            for range in conf["spec"]["runAsUser"]["ranges"]
+                            if range["min"] == 0
+                        ),
+                        CheckResult.PASSED,
+                    )
+
+            elif inspected_value == "MustRunAsNonRoot":
+                return CheckResult.PASSED
         return CheckResult.FAILED
 
 

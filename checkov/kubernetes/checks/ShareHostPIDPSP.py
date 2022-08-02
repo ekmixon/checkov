@@ -18,9 +18,8 @@ class ShareHostPIDPSP(BaseSpecOmittedOrValueCheck):
         return "spec/hostPID"
 
     def get_resource_id(self, conf):
-        if "metadata" in conf:
-            if "name" in conf["metadata"]:
-                return 'PodSecurityPolicy.{}'.format(conf["metadata"]["name"])
+        if "metadata" in conf and "name" in conf["metadata"]:
+            return f'PodSecurityPolicy.{conf["metadata"]["name"]}'
         return 'PodSecurityPolicy.spec.hostPID'
 
 

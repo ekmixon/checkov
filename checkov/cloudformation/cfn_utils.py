@@ -30,10 +30,8 @@ def get_resource_tags(entity: Dict[str_node, dict_node], registry: Registry = cf
         return None
 
     try:
-        properties = entity_config.get("Properties")
-        if properties:
-            tags = properties.get("Tags")
-            if tags:
+        if properties := entity_config.get("Properties"):
+            if tags := properties.get("Tags"):
                 return parse_entity_tags(tags)
     except:
         logging.warning(f"Failed to parse tags for entity {entity}")
@@ -74,21 +72,16 @@ def get_entity_value_as_string(value: Any) -> str:
     :param value:
     :return:
     """
-    if isinstance(value, dict):
-        (function, value) = next(iter(value.items()))
-        # If the value is a long-form function, then the first element is the template string (technically str_node)
-        # Otherwise the dict value is the template string
-        if isinstance(value, list):
-            if "Join" in function:
-                # Join looks like !Join [, [V1, V2, V3]]
-                join_str = str(value[0])
-                return join_str.join([str(v) for v in value[1]])
-            else:
-                return str(value[0])
-        else:
-            return str(value)
-    else:
+    if not isinstance(value, dict):
         return str(value)
+    (function, value) = next(iter(value.items()))
+    if not isinstance(value, list):
+        return str(value)
+    if "Join" not in function:
+        return str(value[0])
+    # Join looks like !Join [, [V1, V2, V3]]
+    join_str = str(value[0])
+    return join_str.join([str(v) for v in value[1]])
 
 
 def get_folder_definitions(
@@ -204,9 +197,12 @@ def create_definitions(
         for k, v in definitions.items()
         if v and isinstance(v, dict_node) and v.__contains__("Resources") and isinstance(v["Resources"], dict_node)
     }
-    definitions_raw = {k: v for k, v in definitions_raw.items() if k in definitions.keys()}
+    definitions_raw = {
+        k: v for k, v in definitions_raw.items() if k in definitions
+    }
 
-    for cf_file in definitions.keys():
+
+    for cf_file in definitions:
         cf_context_parser = ContextParser(cf_file, definitions[cf_file], definitions_raw[cf_file])
         logging.debug(
             "Template Dump for {}: {}".format(cf_file, json.dumps(definitions[cf_file], indent=2, default=str))

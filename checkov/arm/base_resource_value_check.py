@@ -24,9 +24,9 @@ class BaseResourceValueCheck(BaseResourceCheck):
 
     @staticmethod
     def _is_variable_dependant(value):
-        if isinstance(value, str) and re.match(VARIABLE_DEPENDANT_REGEX, value):
-            return True
-        return False
+        return bool(
+            isinstance(value, str) and re.match(VARIABLE_DEPENDANT_REGEX, value)
+        )
 
     @staticmethod
     def _is_nesting_key(inspected_attributes, key):
@@ -36,7 +36,7 @@ class BaseResourceValueCheck(BaseResourceCheck):
         :param key: JSONPath key of an attribute
         :return: True/False
         """
-        return any([x in key for x in inspected_attributes])
+        return any(x in key for x in inspected_attributes)
 
     def scan_resource_conf(self, conf):
         inspected_key = self.get_inspected_key()

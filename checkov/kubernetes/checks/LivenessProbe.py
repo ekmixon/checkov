@@ -18,12 +18,9 @@ class LivenessProbe(BaseK8Check):
 
     def scan_spec_conf(self, conf):
         # Don't check Job/CronJob
-        if "parent" in conf:
-            if "Job" in conf["parent"]:
-                return CheckResult.PASSED
-        if "livenessProbe" not in conf:
-            return CheckResult.FAILED
-        return CheckResult.PASSED
+        if "parent" in conf and "Job" in conf["parent"]:
+            return CheckResult.PASSED
+        return CheckResult.PASSED if "livenessProbe" in conf else CheckResult.FAILED
 
 
 check = LivenessProbe()

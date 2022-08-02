@@ -13,18 +13,22 @@ class SQLServerEmailAlertsEnabled(BaseResourceCheck):
         super().__init__(name=name, id=id, categories=categories, supported_resources=supported_resources)
 
     def scan_resource_conf(self, conf):
-        if "resources" in conf:
-            if conf["resources"]:
-                for resource in conf["resources"]:
-                    if "type" in resource:
-                        if resource["type"] == "Microsoft.Sql/servers/databases/securityAlertPolicies" or \
-                                resource["type"] == "securityAlertPolicies":
-                            if "properties" in resource:
-                                if "state" in resource["properties"] and \
-                                        resource["properties"]["state"].lower() == "enabled":
-                                    if "emailAddresses" in resource["properties"] and \
-                                            resource["properties"]["emailAddresses"]:
-                                                return CheckResult.PASSED
+        if "resources" in conf and conf["resources"]:
+            for resource in conf["resources"]:
+                if (
+                    "type" in resource
+                    and resource["type"]
+                    in [
+                        "Microsoft.Sql/servers/databases/securityAlertPolicies",
+                        "securityAlertPolicies",
+                    ]
+                    and "properties" in resource
+                    and "state" in resource["properties"]
+                    and resource["properties"]["state"].lower() == "enabled"
+                    and "emailAddresses" in resource["properties"]
+                    and resource["properties"]["emailAddresses"]
+                ):
+                    return CheckResult.PASSED
 
         return CheckResult.FAILED
 

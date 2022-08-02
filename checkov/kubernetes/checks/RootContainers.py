@@ -22,9 +22,10 @@ class RootContainers(BaseK8Check):
 
     def get_resource_id(self, conf):
         if "namespace" in conf["metadata"]:
-            return "{}.{}.{}".format(conf["kind"], conf["metadata"]["name"], conf["metadata"]["namespace"])
+            return f'{conf["kind"]}.{conf["metadata"]["name"]}.{conf["metadata"]["namespace"]}'
+
         else:
-            return "{}.{}.default".format(conf["kind"], conf["metadata"]["name"])
+            return f'{conf["kind"]}.{conf["metadata"]["name"]}.default'
 
     def scan_spec_conf(self, conf):
         spec = {}
@@ -33,86 +34,67 @@ class RootContainers(BaseK8Check):
             if "spec" in conf:
                 spec = conf["spec"]
         elif conf['kind'] == 'CronJob':
-            if "spec" in conf:
-                if "jobTemplate" in conf["spec"]:
-                    if "spec" in conf["spec"]["jobTemplate"]:
-                        if "template" in conf["spec"]["jobTemplate"]["spec"]:
-                            if "spec" in conf["spec"]["jobTemplate"]["spec"]["template"]:
-                                spec = conf["spec"]["jobTemplate"]["spec"]["template"]["spec"]
+            if (
+                "spec" in conf
+                and "jobTemplate" in conf["spec"]
+                and "spec" in conf["spec"]["jobTemplate"]
+                and "template" in conf["spec"]["jobTemplate"]["spec"]
+                and "spec" in conf["spec"]["jobTemplate"]["spec"]["template"]
+            ):
+                spec = conf["spec"]["jobTemplate"]["spec"]["template"]["spec"]
         else:
             inner_spec = self.get_inner_entry(conf, "spec")
-            spec = inner_spec if inner_spec else spec
+            spec = inner_spec or spec
 
         # Collect results
         if spec:
-            results = {}
-            results["pod"] = {}
-            results["container"] = []
+            results = {"pod": {}, "container": []}
             results["pod"]["runAsNonRoot"] = check_runAsNonRoot(spec)
             results["pod"]["runAsUser"] = check_runAsUser(spec)
 
             if spec.get("containers"):
                 for c in spec["containers"]:
-                    cresults = {}
-                    cresults["runAsNonRoot"] = check_runAsNonRoot(c)
+                    cresults = {"runAsNonRoot": check_runAsNonRoot(c)}
                     cresults["runAsUser"] = check_runAsUser(c)
                     results["container"].append(cresults)
 
-            # Evaluate pass / fail
-            # Container values override Pod values
-                # Pod runAsNonRoot == True, plus no override at container spec   (PASSED)
-                # Pod runAsNonRoot == True, but container runAsNonRoot == False
-                #                     If runAsUser failed or absent (FAILED)
-                #                     if runAsUser passed, the check will pass (but don't want to pass one container if another fails)
-            if results["pod"]["runAsNonRoot"] == "PASSED":
-                for cr in results["container"]:
-                    if cr["runAsNonRoot"] == "FAILED":
-                        if cr["runAsUser"] == "FAILED" or cr["runAsUser"] == "ABSENT":
-                            return CheckResult.FAILED
-                return CheckResult.PASSED
-            elif results["pod"]["runAsUser"] == "PASSED":
-                # Pod runAsNonRoot == False (or absent) ; Pod runAsUser > 0 (PASSED)
-                    # If container runAsUser FAILED, then overall fail as it overrides pod (FAILED)
-                for cr in results["container"]:
+            for cr in results["container"]:
+                if results["pod"]["runAsNonRoot"] == "PASSED":
+                    if cr["runAsNonRoot"] == "FAILED" and cr["runAsUser"] in [
+                        "FAILED",
+                        "ABSENT",
+                    ]:
+                        return CheckResult.FAILED
+                elif results["pod"]["runAsUser"] == "PASSED":
+                            # Pod runAsNonRoot == False (or absent) ; Pod runAsUser > 0 (PASSED)
+                # If container runAsUser FAILED, then overall fail as it overrides pod (FAILED)
                     if cr["runAsUser"] == "FAILED":
                         return CheckResult.FAILED
-                return CheckResult.PASSED
-            else:
-                # Pod runAsNonRoot and runAsUser failed or absent
-                    #   If container runAsNonRoot true (PASSED)
-                    #   If container runAsNonRoot failed or absent, but runAsUser passed (PASSED)
-                    #   If container runAsNonRoot failed or absent, but runAsUser failed/absent (FAILED)
-                for cr in results["container"]:
-
+                else:
+                            # Pod runAsNonRoot and runAsUser failed or absent
+                #   If container runAsNonRoot true (PASSED)
+                #   If container runAsNonRoot failed or absent, but runAsUser passed (PASSED)
+                #   If container runAsNonRoot failed or absent, but runAsUser failed/absent (FAILED)
                     if cr["runAsNonRoot"] == "PASSED":
                         continue
-                    if cr["runAsNonRoot"] == "FAILED" or cr["runAsNonRoot"] == "ABSENT":
-                        if cr["runAsUser"] == "PASSED":
-                            continue
-                        else:
-                            return CheckResult.FAILED
-                return CheckResult.PASSED
-
+                    if (
+                        cr["runAsNonRoot"] in ["FAILED", "ABSENT"]
+                        and cr["runAsUser"] != "PASSED"
+                    ):
+                        return CheckResult.FAILED
+            return CheckResult.PASSED
         return CheckResult.FAILED
 
 check = RootContainers()
 
 def check_runAsNonRoot(spec):
-    if "securityContext" in spec:
-        if "runAsNonRoot" in spec["securityContext"]:
-            if spec["securityContext"]["runAsNonRoot"]:
-                return "PASSED"
-            else:
-                return "FAILED"
+    if "securityContext" in spec and "runAsNonRoot" in spec["securityContext"]:
+        return "PASSED" if spec["securityContext"]["runAsNonRoot"] else "FAILED"
     return "ABSENT"
 
 def check_runAsUser(spec):
-    if "securityContext" in spec:
-        if "runAsUser" in spec["securityContext"]:
-            if spec["securityContext"]["runAsUser"] > 0:
-                return "PASSED"
-            else:
-                return "FAILED"
+    if "securityContext" in spec and "runAsUser" in spec["securityContext"]:
+        return "PASSED" if spec["securityContext"]["runAsUser"] > 0 else "FAILED"
     return "ABSENT"
 
 

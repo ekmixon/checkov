@@ -183,9 +183,12 @@ class Runner(BaseRunner):
         for line_number in [secret.line_number, secret.line_number - 1, secret.line_number + 1]:
             lt = linecache.getline(secret.filename, line_number)
             skip_search = re.search(COMMENT_REGEX, lt)
-            if skip_search and skip_search.group(2) == check_id:
+            if skip_search and skip_search[2] == check_id:
                 return {
                     "result": CheckResult.SKIPPED,
-                    "suppress_comment": skip_search.group(3)[1:] if skip_search.group(3) else "No comment provided"
+                    "suppress_comment": skip_search[3][1:]
+                    if skip_search[3]
+                    else "No comment provided",
                 }
+
         return None

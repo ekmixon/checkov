@@ -12,11 +12,13 @@ class SecretExpirationDate(BaseResourceCheck):
         super().__init__(name=name, id=id, categories=categories, supported_resources=supported_resources)
 
     def scan_resource_conf(self, conf):
-        if "properties" in conf:
-            if "attributes" in conf["properties"]:
-                if "exp" in conf["properties"]["attributes"]:
-                    if conf["properties"]["attributes"]["exp"]:
-                        return CheckResult.PASSED
+        if (
+            "properties" in conf
+            and "attributes" in conf["properties"]
+            and "exp" in conf["properties"]["attributes"]
+            and conf["properties"]["attributes"]["exp"]
+        ):
+            return CheckResult.PASSED
         return CheckResult.FAILED
 
 check = SecretExpirationDate()

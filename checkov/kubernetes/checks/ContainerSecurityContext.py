@@ -19,9 +19,8 @@ class ContainerSecurityContext(BaseK8Check):
         return f'{conf["parent"]} - {conf["name"]}' if conf.get('name') else conf["parent"]
 
     def scan_spec_conf(self, conf):
-        if "securityContext" in conf:
-            if conf["securityContext"]:
-                    return CheckResult.PASSED
+        if "securityContext" in conf and conf["securityContext"]:
+            return CheckResult.PASSED
         return CheckResult.FAILED
 
 

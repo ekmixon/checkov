@@ -29,41 +29,47 @@ class NSGRulePortAccessRestricted(BaseResourceCheck):
             start, end = int(portRange.split('-')[0]), int(portRange.split('-')[1])
             if start <= self.port <= end:
                 return True
-        if portRange in [str(self.port), '*']:
-            return True
-        return False
+        return portRange in [str(self.port), '*']
 
     def scan_resource_conf(self, conf):
         if "properties" in conf:
             securityRules = []
-            if "type" in conf and conf["type"] == "Microsoft.Network/networkSecurityGroups":
-                if "securityRules" in conf["properties"]:
+            if "type" in conf:
+                if (
+                    conf["type"] == "Microsoft.Network/networkSecurityGroups"
+                    and "securityRules" in conf["properties"]
+                ):
                     securityRules.extend(conf["properties"]["securityRules"])
-            if "type" in conf and conf["type"] == "Microsoft.Network/networkSecurityGroups/securityRules":
-                securityRules.append(conf)
+                if conf["type"] == "Microsoft.Network/networkSecurityGroups/securityRules":
+                    securityRules.append(conf)
 
             for rule in securityRules:
-                portRanges = []
-                sourcePrefixes = []
-                if "properties" in rule:
-                    if "access" in rule["properties"] and rule["properties"]["access"].lower() == "allow":
-                        if "direction" in rule["properties"] and rule["properties"]["direction"].lower() == "inbound":
-                            if "protocol" in rule["properties"] and rule["properties"]["protocol"].lower() == "tcp":
-                                if "destinationPortRanges" in rule["properties"]:
-                                    portRanges.extend(rule["properties"]["destinationPortRanges"])
-                                if "destinationPortRange" in rule["properties"]:
-                                    portRanges.append(rule["properties"]["destinationPortRange"])
+                if (
+                    "properties" in rule
+                    and "access" in rule["properties"]
+                    and rule["properties"]["access"].lower() == "allow"
+                    and "direction" in rule["properties"]
+                    and rule["properties"]["direction"].lower() == "inbound"
+                    and "protocol" in rule["properties"]
+                    and rule["properties"]["protocol"].lower() == "tcp"
+                ):
+                    portRanges = []
+                    if "destinationPortRanges" in rule["properties"]:
+                        portRanges.extend(rule["properties"]["destinationPortRanges"])
+                    if "destinationPortRange" in rule["properties"]:
+                        portRanges.append(rule["properties"]["destinationPortRange"])
 
-                                if "sourceAddressPrefixes" in rule["properties"]:
-                                    sourcePrefixes.extend(rule["properties"]["sourceAddressPrefixes"])
-                                if "sourceAddressPrefix" in rule["properties"]:
-                                    sourcePrefixes.append(rule["properties"]["sourceAddressPrefix"])
+                    sourcePrefixes = []
+                    if "sourceAddressPrefixes" in rule["properties"]:
+                        sourcePrefixes.extend(rule["properties"]["sourceAddressPrefixes"])
+                    if "sourceAddressPrefix" in rule["properties"]:
+                        sourcePrefixes.append(rule["properties"]["sourceAddressPrefix"])
 
-                                for portRange in portRanges:
-                                    if self.is_port_in_range(portRange):
-                                        for prefix in sourcePrefixes:
-                                            if prefix in INTERNET_ADDRESSES:
-                                                return CheckResult.FAILED
+                    for portRange in portRanges:
+                        if self.is_port_in_range(portRange):
+                            for prefix in sourcePrefixes:
+                                if prefix in INTERNET_ADDRESSES:
+                                    return CheckResult.FAILED
 
         return CheckResult.PASSED
 

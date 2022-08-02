@@ -33,9 +33,9 @@ def check_duplicates(ordered_pairs, beg_mark, end_mark):
     mapping = dict_node({}, beg_mark, end_mark)
     for key, value in ordered_pairs:
         if value is None:
-            raise NullError('"{}"'.format(key))
+            raise NullError(f'"{key}"')
         if key in mapping:
-            raise DuplicateError('"{}"'.format(key))
+            raise DuplicateError(f'"{key}"')
         mapping[key] = value
     return mapping
 
@@ -175,17 +175,17 @@ def cfn_json_object(s_and_end, strict, scan_once, object_hook, object_pairs_hook
                     result = object_pairs_hook(pairs, beg_mark, end_mark)
                     return result, end + 1
                 except DuplicateError as err:
-                    raise JSONDecodeError('Duplicate found {}'.format(err), s, end)
+                    raise JSONDecodeError(f'Duplicate found {err}', s, end)
                 except NullError as err:
-                    raise JSONDecodeError('Null Error {}'.format(err), s, end)
+                    raise JSONDecodeError(f'Null Error {err}', s, end)
             pairs = {}
             if object_hook is not None:
                 beg_mark, end_mark = get_beg_end_mark(s, orginal_end, end + 1)
                 pairs = object_hook(pairs, beg_mark, end_mark)
             return pairs, end + 1
 
-        if nextchar != '"':
-            raise JSONDecodeError('Expecting property name enclosed in double quotes', s, end)
+    if nextchar != '"':
+        raise JSONDecodeError('Expecting property name enclosed in double quotes', s, end)
     end += 1
     while True:
         begin = end - 1
@@ -197,15 +197,15 @@ def cfn_json_object(s_and_end, strict, scan_once, object_hook, object_pairs_hook
         # the JSON key separator is ": " or just ":".
         if s[end:end + 1] != ':':
             end = _w(s, end).end()
-            if s[end:end + 1] != ':':
-                raise JSONDecodeError('Expecting \':\' delimiter', s, end)
+        if s[end:end + 1] != ':':
+            raise JSONDecodeError('Expecting \':\' delimiter', s, end)
         end += 1
 
         try:
             if s[end] in _ws:
                 end += 1
-                if s[end] in _ws:
-                    end = _w(s, end + 1).end()
+            if s[end] in _ws:
+                end = _w(s, end + 1).end()
         except IndexError:
             pass
 
@@ -240,9 +240,9 @@ def cfn_json_object(s_and_end, strict, scan_once, object_hook, object_pairs_hook
             beg_mark, end_mark = get_beg_end_mark(s, orginal_end, end)
             result = object_pairs_hook(pairs, beg_mark, end_mark)
         except DuplicateError as err:
-            raise JSONDecodeError('Duplicate found {}'.format(err), s, begin, key)
+            raise JSONDecodeError(f'Duplicate found {err}', s, begin, key)
         except NullError as err:
-            raise JSONDecodeError('Null Error {}'.format(err), s, begin, key)
+            raise JSONDecodeError(f'Null Error {err}', s, begin, key)
         return result, end
 
     pairs = dict(pairs)

@@ -59,7 +59,10 @@ class Record:
 
     def _is_expression_in_code_lines(self, expression):
         stripped_expression = self._trim_special_chars(expression)
-        return any([stripped_expression in self._trim_special_chars(line) for (_, line) in self.code_block])
+        return any(
+            stripped_expression in self._trim_special_chars(line)
+            for (_, line) in self.code_block
+        )
 
     @staticmethod
     def _code_line_string(code_block):
@@ -87,15 +90,24 @@ class Record:
         elif self.check_result['result'] == CheckResult.SKIPPED:
             status = CheckResult.SKIPPED.name
             status_color = 'blue'
-            suppress_comment = "\tSuppress comment: {}\n".format(self.check_result['suppress_comment'])
+            suppress_comment = (
+                f"\tSuppress comment: {self.check_result['suppress_comment']}\n"
+            )
 
-        check_message = colored("Check: {}: \"{}\"\n".format(self.get_output_id(use_bc_ids), self.check_name), "white")
+
+        check_message = colored(
+            f'Check: {self.get_output_id(use_bc_ids)}: \"{self.check_name}\"\n',
+            "white",
+        )
+
         guideline_message = ''
         if self.guideline:
             guideline_message = "\tGuide: " + Style.BRIGHT + colored(f"{self.guideline}\n", 'blue', attrs=['underline']) + Style.RESET_ALL
         file_details = colored(
-            "\tFile: {}:{}\n".format(self.file_path, "-".join([str(x) for x in self.file_line_range])),
-            "magenta")
+            f'\tFile: {self.file_path}:{"-".join([str(x) for x in self.file_line_range])}\n',
+            "magenta",
+        )
+
         code_lines = ""
         if self.code_block:
             code_lines = "\n{}\n".format("".join(
@@ -103,9 +115,10 @@ class Record:
         caller_file_details = ""
         if self.caller_file_path and self.caller_file_line_range:
             caller_file_details = colored(
-                "\tCalling File: {}:{}\n".format(self.caller_file_path,
-                                                 "-".join([str(x) for x in self.caller_file_line_range])),
-                "magenta")
+                f'\tCalling File: {self.caller_file_path}:{"-".join([str(x) for x in self.caller_file_line_range])}\n',
+                "magenta",
+            )
+
         if self.evaluations:
             for (var_name, var_evaluations) in self.evaluations.items():
                 var_file = var_evaluations['var_file']
@@ -117,7 +130,10 @@ class Record:
                             f'\tVariable {colored(var_name, "yellow")} (of {var_file}) evaluated to value "{colored(var_evaluations["value"], "yellow")}" '
                             f'in expression: {colored(definition_obj["definition_name"] + " = ", "yellow")}{colored(definition_obj["definition_expression"], "yellow")}\n',
                             'white')
-        status_message = colored("\t{} for resource: {}\n".format(status, self.resource), status_color)
+        status_message = colored(
+            f"\t{status} for resource: {self.resource}\n", status_color
+        )
+
         if self.check_result['result'] == CheckResult.FAILED and code_lines and not compact:
             return check_message + status_message + file_details + caller_file_details + guideline_message + code_lines + evaluation_message
 

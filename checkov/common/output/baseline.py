@@ -43,15 +43,17 @@ class Baseline:
         """
         failed_checks_list = []
         for file, findings in self.failed_checks.items():
-            formatted_findings = []
-            for finding in findings:
-                formatted_findings.append({"resource": finding['resource'], "check_ids": finding["check_ids"]})
+            formatted_findings = [
+                {
+                    "resource": finding['resource'],
+                    "check_ids": finding["check_ids"],
+                }
+                for finding in findings
+            ]
+
             failed_checks_list.append({"file": file, "findings": formatted_findings})
 
-        resp = {
-            "failed_checks": failed_checks_list
-        }
-        return resp
+        return {"failed_checks": failed_checks_list}
 
     def compare_and_reduce_reports(self, scan_reports: List[Report]) -> None:
         for scan_report in scan_reports:

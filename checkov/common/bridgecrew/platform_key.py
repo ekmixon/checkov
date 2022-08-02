@@ -3,8 +3,8 @@ import os
 from pathlib import Path
 
 home = str(Path.home())
-bridgecrew_dir = "{}/.bridgecrew".format(home)
-bridgecrew_file = "{}/credentials".format(bridgecrew_dir)
+bridgecrew_dir = f"{home}/.bridgecrew"
+bridgecrew_file = f"{bridgecrew_dir}/credentials"
 
 
 def persist_key(key):

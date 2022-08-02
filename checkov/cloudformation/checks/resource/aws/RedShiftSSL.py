@@ -14,11 +14,15 @@ class RedShiftSSL(BaseResourceCheck):
     def scan_resource_conf(self, conf: dict_node) -> CheckResult:
         params = conf.get("Properties", {}).get("Parameters", {})
 
-        for param in params:
-            if param.get("ParameterName") == "require_ssl" and param.get("ParameterValue") == "true":
-                return CheckResult.PASSED
-
-        return CheckResult.FAILED
+        return next(
+            (
+                CheckResult.PASSED
+                for param in params
+                if param.get("ParameterName") == "require_ssl"
+                and param.get("ParameterValue") == "true"
+            ),
+            CheckResult.FAILED,
+        )
 
 
 check = RedShiftSSL()

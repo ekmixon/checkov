@@ -18,10 +18,12 @@ class PrivilegedContainers(BaseK8Check):
         return f'{conf["parent"]} - {conf["name"]}' if conf.get('name') else conf["parent"]
 
     def scan_spec_conf(self, conf):
-        if "securityContext" in conf:
-            if "privileged" in conf["securityContext"]:
-                if conf["securityContext"]["privileged"]:
-                    return CheckResult.FAILED
+        if (
+            "securityContext" in conf
+            and "privileged" in conf["securityContext"]
+            and conf["securityContext"]["privileged"]
+        ):
+            return CheckResult.FAILED
         return CheckResult.PASSED
 
 

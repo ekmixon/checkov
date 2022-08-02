@@ -38,11 +38,7 @@ class CustomPoliciesIntegration(BaseIntegrationFeature):
                 'provider': policy['provider']
             }
         }
-        check = {
-            'metadata': metadata,
-            'definition': policy['conditionQuery']
-        }
-        return check
+        return {'metadata': metadata, 'definition': policy['conditionQuery']}
 
     def _get_policies_from_platform(self):
         headers = merge_dicts(get_default_get_headers(self.bc_integration.bc_source, self.bc_integration.bc_source_version),

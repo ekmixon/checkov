@@ -20,17 +20,19 @@ class ECRPolicy(BaseResourceCheck):
         :param conf: aws_ecr_repository configuration
         :return: <CheckResult>
         """
-        if 'Properties' in conf.keys():
-            if 'RepositoryPolicyText' in conf['Properties'].keys():
-                policy_text = conf['Properties']['RepositoryPolicyText']
-                if type(policy_text) in (str, str_node):
-                    policy_text = json.loads(str(policy_text))
-                if 'Statement' in policy_text.keys():
-                    for statement in policy_text['Statement']:
-                        if 'Principal' in statement.keys():
-                            for principal in statement['Principal']:
-                                if principal == "*":
-                                    return CheckResult.FAILED
+        if (
+            'Properties' in conf.keys()
+            and 'RepositoryPolicyText' in conf['Properties'].keys()
+        ):
+            policy_text = conf['Properties']['RepositoryPolicyText']
+            if type(policy_text) in (str, str_node):
+                policy_text = json.loads(str(policy_text))
+            if 'Statement' in policy_text.keys():
+                for statement in policy_text['Statement']:
+                    if 'Principal' in statement.keys():
+                        for principal in statement['Principal']:
+                            if principal == "*":
+                                return CheckResult.FAILED
         return CheckResult.PASSED
 
 

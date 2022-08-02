@@ -17,14 +17,12 @@ class KubletEventCapture(BaseK8Check):
         return f'{conf["parent"]} - {conf["name"]}' if conf.get('name') else conf["parent"]
 
     def scan_spec_conf(self, conf):
-        if "command" in conf:
-            if "kubelet" in conf["command"]:
-                for cmd in conf["command"]:
-                    if "=" in cmd:
-                        [key, value, *_] = cmd.split("=")
-                        if key == "--event-qps":
-                            if int(value) > 5:
-                                return CheckResult.FAILED
+        if "command" in conf and "kubelet" in conf["command"]:
+            for cmd in conf["command"]:
+                if "=" in cmd:
+                    [key, value, *_] = cmd.split("=")
+                    if key == "--event-qps" and int(value) > 5:
+                        return CheckResult.FAILED
 
         return CheckResult.PASSED
 
