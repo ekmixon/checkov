@@ -35,7 +35,8 @@ class BaseK8Check(BaseCheck):
 
     @staticmethod
     def get_inner_entry(conf, entry_name):
-        spec = {}
-        if conf.get("spec") and conf.get("spec").get("template"):
-            spec = conf.get("spec").get("template").get(entry_name, {})
-        return spec
+        return (
+            conf.get("spec").get("template").get(entry_name, {})
+            if conf.get("spec") and conf.get("spec").get("template")
+            else {}
+        )

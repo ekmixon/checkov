@@ -19,25 +19,19 @@ def force_list(var: T) -> List[T]:
 
 
 def force_list(var: Union[T, List[T]]) -> List[T]:
-    if not isinstance(var, list):
-        return [var]
-    return var
+    return var if isinstance(var, list) else [var]
 
 
 def force_int(var: Any) -> Optional[int]:
     try:
-        if not isinstance(var, int):
-            return int(var)
-        return var
+        return var if isinstance(var, int) else int(var)
     except Exception:
         return None
 
 
 def force_float(var: Any) -> Optional[float]:
     try:
-        if not isinstance(var, float):
-            return float(var)
-        return var
+        return var if isinstance(var, float) else float(var)
     except Exception:
         return None
 
@@ -88,8 +82,7 @@ def extract_policy_dict(policy: Union[dict, str]) -> Optional[dict]:
         return policy
     if isinstance(policy, str):
         try:
-            policy_dict = json.loads(policy)
-            return policy_dict
+            return json.loads(policy)
         except JSONDecodeError:
             return None
 

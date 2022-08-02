@@ -52,7 +52,7 @@ def get_checks(framework="all", use_bc_ids=False):
                 for rt in check.resource_types:
                     printable_checks_list.append([check.get_output_id(use_bc_ids), checked_type, rt, check.name, iac])
 
-    if framework == "terraform" or framework == "all":
+    if framework in ["terraform", "all"]:
         add_from_repository(resource_registry, "resource", "Terraform")
         add_from_repository(data_registry, "data", "Terraform")
         add_from_repository(provider_registry, "provider", "Terraform")
@@ -61,15 +61,15 @@ def get_checks(framework="all", use_bc_ids=False):
         graph_registry = get_graph_checks_registry("terraform")
         graph_registry.load_checks()
         add_from_repository(graph_registry, "resource", "Terraform")
-    if framework == "cloudformation" or framework == "all":
+    if framework in ["cloudformation", "all"]:
         add_from_repository(cfn_registry, "resource", "Cloudformation")
-    if framework == "kubernetes" or framework == "all":
+    if framework in ["kubernetes", "all"]:
         add_from_repository(k8_registry, "resource", "Kubernetes")
-    if framework == "serverless" or framework == "all":
+    if framework in ["serverless", "all"]:
         add_from_repository(sls_registry, "resource", "serverless")
-    if framework == "dockerfile" or framework == "all":
+    if framework in ["dockerfile", "all"]:
         add_from_repository(dockerfile_registry, "dockerfile", "dockerfile")
-    if framework == "arm" or framework == "all":
+    if framework in ["arm", "all"]:
         add_from_repository(arm_resource_registry, "resource", "arm")
         add_from_repository(arm_parameter_registry, "parameter", "arm")
     return sorted(printable_checks_list, key=get_compare_key)

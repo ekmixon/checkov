@@ -14,11 +14,13 @@ class StorageBlobServiceContainerPrivateAccess(BaseResourceCheck):
         super().__init__(name=name, id=id, categories=categories, supported_resources=supported_resources)
 
     def scan_resource_conf(self, conf):
-        if "properties" in conf:
-            if "publicAccess" in conf["properties"]:
-                if str(conf["properties"]["publicAccess"]).lower() == "container" or \
-                        str(conf["properties"]["publicAccess"]).lower() == "blob":
-                    return CheckResult.FAILED
+        if (
+            "properties" in conf
+            and "publicAccess" in conf["properties"]
+            and str(conf["properties"]["publicAccess"]).lower()
+            in {"container", "blob"}
+        ):
+            return CheckResult.FAILED
         return CheckResult.PASSED
 
 check = StorageBlobServiceContainerPrivateAccess()

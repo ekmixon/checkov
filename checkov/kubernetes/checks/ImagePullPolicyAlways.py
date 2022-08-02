@@ -27,27 +27,21 @@ class ImagePullPolicyAlways(BaseK8Check):
         return f'{conf["parent"]} - {conf["name"]}' if conf.get('name') else conf["parent"]
 
     def scan_spec_conf(self, conf):
-        if "image" in conf:
-            # Remove the digest, if present
-            image_val = conf["image"]
-            if not isinstance(image_val, str) or image_val.strip() == '':
-                return CheckResult.UNKNOWN
-            if '@' in image_val:
-                image_val = image_val[0:image_val.index('@')]
+        if "image" not in conf:
+            return CheckResult.FAILED
+        # Remove the digest, if present
+        image_val = conf["image"]
+        if not isinstance(image_val, str) or image_val.strip() == '':
+            return CheckResult.UNKNOWN
+        if '@' in image_val:
+            image_val = image_val[:image_val.index('@')]
 
-            (image, tag) = re.findall(DOCKER_IMAGE_REGEX, image_val)[0]
-            if "imagePullPolicy" not in conf:
-                if tag == "latest" or tag == "":
-                    # Default imagePullPolicy = Always
-                    return CheckResult.PASSED
-                else:
-                    # Default imagePullPolicy = IfNotPresent
-                    return CheckResult.FAILED
-            else:
-                if conf["imagePullPolicy"] != "Always":
-                    return CheckResult.FAILED
-
-        else:
+        (image, tag) = re.findall(DOCKER_IMAGE_REGEX, image_val)[0]
+        if "imagePullPolicy" not in conf and tag in ["latest", ""]:
+            # Default imagePullPolicy = Always
+            return CheckResult.PASSED
+        elif "imagePullPolicy" not in conf or conf["imagePullPolicy"] != "Always":
+            # Default imagePullPolicy = IfNotPresent
             return CheckResult.FAILED
         return CheckResult.PASSED
 

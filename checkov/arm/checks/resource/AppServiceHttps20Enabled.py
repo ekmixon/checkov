@@ -12,11 +12,14 @@ class AppServiceHttps20Enabled(BaseResourceCheck):
         super().__init__(name=name, id=id, categories=categories, supported_resources=supported_resources)
 
     def scan_resource_conf(self, conf):
-        if "properties" in conf:
-            if "siteConfig" in conf["properties"]:
-                if "http20Enabled" in conf["properties"]["siteConfig"]:
-                    if str(conf["properties"]["siteConfig"]["http20Enabled"]).lower() == "true":
-                        return CheckResult.PASSED
+        if (
+            "properties" in conf
+            and "siteConfig" in conf["properties"]
+            and "http20Enabled" in conf["properties"]["siteConfig"]
+            and str(conf["properties"]["siteConfig"]["http20Enabled"]).lower()
+            == "true"
+        ):
+            return CheckResult.PASSED
         return CheckResult.FAILED
 
 check = AppServiceHttps20Enabled()

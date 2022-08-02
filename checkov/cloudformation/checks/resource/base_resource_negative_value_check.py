@@ -39,9 +39,10 @@ class BaseResourceNegativeValueCheck(BaseResourceCheck):
         matches = ContextParser.search_deep_keys(path_elements[-1], conf, [])
         if len(matches) > 0:
             for match in matches:
-                if match[:-1] == path_elements:
-                    if match[-1] in bad_values or ANY_VALUE in bad_values:
-                        return CheckResult.FAILED
+                if match[:-1] == path_elements and (
+                    match[-1] in bad_values or ANY_VALUE in bad_values
+                ):
+                    return CheckResult.FAILED
 
         return CheckResult.PASSED
 

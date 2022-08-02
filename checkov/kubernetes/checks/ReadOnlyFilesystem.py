@@ -16,10 +16,12 @@ class ReadOnlyFilesystem(BaseK8Check):
         return f'{conf["parent"]} - {conf["name"]}' if conf.get('name') else conf["parent"]
 
     def scan_spec_conf(self, conf):
-        if "securityContext" in conf:
-            if "readOnlyRootFilesystem" in conf["securityContext"]:
-                if conf["securityContext"]["readOnlyRootFilesystem"]:
-                    return CheckResult.PASSED
+        if (
+            "securityContext" in conf
+            and "readOnlyRootFilesystem" in conf["securityContext"]
+            and conf["securityContext"]["readOnlyRootFilesystem"]
+        ):
+            return CheckResult.PASSED
         return CheckResult.FAILED
 
 

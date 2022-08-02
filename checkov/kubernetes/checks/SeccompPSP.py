@@ -14,19 +14,27 @@ class SeccompPSP(BaseK8Check):
         super().__init__(name=name, id=id, categories=categories, supported_entities=supported_kind)
 
     def get_resource_id(self, conf):
-        if "metadata" in conf:
-            if "name" in conf["metadata"]:
-                return 'PodSecurityPolicy.{}'.format(conf["metadata"]["name"])
+        if "metadata" in conf and "name" in conf["metadata"]:
+            return f'PodSecurityPolicy.{conf["metadata"]["name"]}'
         return 'PodSecurityPolicy.annotations.seccomp.security.alpha.kubernetes.io/defaultProfileName'
 
     def scan_spec_conf(self, conf):
-        if "metadata" in conf:
-            if "annotations" in conf["metadata"] and conf["metadata"].get("annotations"):
-                for annotation in conf["metadata"]["annotations"]:
-                    for key in annotation:
-                        if "seccomp.security.alpha.kubernetes.io/defaultProfileName" in key:
-                            if "docker/default" in annotation[key] or "runtime/default" in annotation[key]:
-                                return CheckResult.PASSED
+        if (
+            "metadata" in conf
+            and "annotations" in conf["metadata"]
+            and conf["metadata"].get("annotations")
+        ):
+            for annotation in conf["metadata"]["annotations"]:
+                for key in annotation:
+                    if (
+                        "seccomp.security.alpha.kubernetes.io/defaultProfileName"
+                        in key
+                        and (
+                            "docker/default" in annotation[key]
+                            or "runtime/default" in annotation[key]
+                        )
+                    ):
+                        return CheckResult.PASSED
         return CheckResult.FAILED
 
 

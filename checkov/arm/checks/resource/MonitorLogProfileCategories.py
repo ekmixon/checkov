@@ -12,11 +12,10 @@ class MonitorLogProfileRetentionDays(BaseResourceCheck):
         super().__init__(name=name, id=id, categories=categories, supported_resources=supported_resources)
 
     def scan_resource_conf(self, conf):
-        if "properties" in conf:
-            if "categories" in conf["properties"]:
-                categories = ['Write', 'Delete', 'Action']
-                if all(category in conf["properties"]["categories"] for category in categories):
-                    return CheckResult.PASSED
+        if "properties" in conf and "categories" in conf["properties"]:
+            categories = ['Write', 'Delete', 'Action']
+            if all(category in conf["properties"]["categories"] for category in categories):
+                return CheckResult.PASSED
         return CheckResult.FAILED
 
 check = MonitorLogProfileRetentionDays()

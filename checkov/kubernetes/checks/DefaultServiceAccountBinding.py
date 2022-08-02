@@ -18,21 +18,24 @@ class DefaultServiceAccountBinding(BaseK8Check):
     # RoleBinding is namespaced... ClusterRoleBinding is not
     def get_resource_id(self, conf):
         if conf["kind"] == "ClusterRoleBinding":
-            return "ClusterRoleBinding.{}".format(conf["metadata"]["name"])
+            return f'ClusterRoleBinding.{conf["metadata"]["name"]}'
         elif conf["kind"] == "RoleBinding":
             if "namespace" in conf["metadata"]:
-                return "RoleBinding.{}.{}".format(conf["metadata"]["name"], conf["metadata"]["namespace"])
+                return f'RoleBinding.{conf["metadata"]["name"]}.{conf["metadata"]["namespace"]}'
+
             else:
-                return "RoleBinding.{}.default".format(conf["metadata"]["name"])
+                return f'RoleBinding.{conf["metadata"]["name"]}.default'
         else:
             return conf["kind"] + '.subjects'
 
     def scan_spec_conf(self, conf):
         if "subjects" in conf:
             for subject in conf["subjects"]:
-                if subject["kind"] == "ServiceAccount":
-                    if subject["name"] == "default":
-                        return CheckResult.FAILED
+                if (
+                    subject["kind"] == "ServiceAccount"
+                    and subject["name"] == "default"
+                ):
+                    return CheckResult.FAILED
         return CheckResult.PASSED
 
 check = DefaultServiceAccountBinding()

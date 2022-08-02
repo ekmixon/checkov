@@ -15,17 +15,20 @@ class DropCapabilitiesPSP(BaseK8Check):
         super().__init__(name=name, id=id, categories=categories, supported_entities=supported_kind)
 
     def get_resource_id(self, conf):
-        if "metadata" in conf:
-            if "name" in conf["metadata"]:
-                return 'PodSecurityPolicy.{}'.format(conf["metadata"]["name"])
+        if "metadata" in conf and "name" in conf["metadata"]:
+            return f'PodSecurityPolicy.{conf["metadata"]["name"]}'
         return 'PodSecurityPolicy.spec.requiredDropCapabilities'
 
     def scan_spec_conf(self, conf):
-        if "spec" in conf:
-            if "requiredDropCapabilities" in conf["spec"]:
-                if "ALL" in conf["spec"]["requiredDropCapabilities"] or "NET_RAW" in conf["spec"][
-                    "requiredDropCapabilities"]:
-                    return CheckResult.PASSED
+        if (
+            "spec" in conf
+            and "requiredDropCapabilities" in conf["spec"]
+            and (
+                "ALL" in conf["spec"]["requiredDropCapabilities"]
+                or "NET_RAW" in conf["spec"]["requiredDropCapabilities"]
+            )
+        ):
+            return CheckResult.PASSED
         return CheckResult.FAILED
 
 

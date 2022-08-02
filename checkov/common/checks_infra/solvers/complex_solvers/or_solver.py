@@ -17,6 +17,4 @@ class OrSolver(BaseComplexSolver):
         return reduce(or_, args)
 
     def get_operation(self, vertex: Dict[str, Any]) -> bool:
-        if any(solver.get_operation(vertex) for solver in self.solvers):
-            return True
-        return False
+        return any((solver.get_operation(vertex) for solver in self.solvers))

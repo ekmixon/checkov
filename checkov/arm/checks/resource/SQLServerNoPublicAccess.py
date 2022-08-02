@@ -15,19 +15,27 @@ class SQLServerNoPublicAccess(BaseResourceCheck):
         # API Version 2015-05-01-preview and 2014-04-01
 
     def scan_resource_conf(self, conf):
-        if "resources" in conf:
-            if conf["resources"]:
-                for resource in conf["resources"]:
-                    if "type" in resource:
-                        if resource["type"] == "Microsoft.Sql/servers/firewallRules" or \
-                                resource["type"] == "firewallRules" or \
-                                resource["type"] == "firewallrules":
-                            if "properties" in resource:
-                                if ("startIpAddress" in resource["properties"] and  # nosec
-                                        resource["properties"]["startIpAddress"] in ['0.0.0.0', '0.0.0.0/0'] and
-                                        "endIpAddress" in resource["properties"] and
-                                        resource["properties"]["endIpAddress"] == '255.255.255.255'):
-                                    return CheckResult.FAILED
+        if "resources" in conf and conf["resources"]:
+            for resource in conf["resources"]:
+                if (
+                    "type" in resource
+                    and resource["type"]
+                    in [
+                        "Microsoft.Sql/servers/firewallRules",
+                        "firewallRules",
+                        "firewallrules",
+                    ]
+                    and "properties" in resource
+                    and (
+                        "startIpAddress" in resource["properties"]
+                        and resource["properties"]["startIpAddress"]  # nosec
+                        in ['0.0.0.0', '0.0.0.0/0']
+                        and "endIpAddress" in resource["properties"]
+                        and resource["properties"]["endIpAddress"]
+                        == '255.255.255.255'
+                    )
+                ):
+                    return CheckResult.FAILED
         return CheckResult.PASSED
 
 check = SQLServerNoPublicAccess()

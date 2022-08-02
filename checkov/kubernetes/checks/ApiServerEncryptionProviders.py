@@ -18,10 +18,9 @@ class ApiServerEncryptionProviders(BaseK8Check):
     def scan_spec_conf(self, conf):
         keys, values = extract_commands(conf)
 
-        if "kube-apiserver" in keys:
-            if "--encryption-provider-config" not in keys:
-                        return CheckResult.FAILED
-        
+        if "kube-apiserver" in keys and "--encryption-provider-config" not in keys:
+            return CheckResult.FAILED
+
 
         return CheckResult.PASSED
 

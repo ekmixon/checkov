@@ -13,14 +13,16 @@ class CodeBuildProjectEncryption(BaseResourceCheck):
         # Only Fail if Artifact Type is S3 and EncryptionDisabled is True.
         artifact_type = ""
         encryption_disabled = False
-        if 'Properties' in conf.keys():
-            if 'Artifacts' in conf['Properties'].keys():
-                if 'Type' in conf['Properties']['Artifacts'].keys():
-                    artifact_type = conf['Properties']['Artifacts']['Type']
-                if 'EncryptionDisabled' in conf['Properties']['Artifacts'].keys(): 
-                    encryption_disabled = conf['Properties']['Artifacts']['EncryptionDisabled']
-                if artifact_type == "S3" and encryption_disabled is True:
-                    return CheckResult.FAILED
+        if (
+            'Properties' in conf.keys()
+            and 'Artifacts' in conf['Properties'].keys()
+        ):
+            if 'Type' in conf['Properties']['Artifacts'].keys():
+                artifact_type = conf['Properties']['Artifacts']['Type']
+            if 'EncryptionDisabled' in conf['Properties']['Artifacts'].keys(): 
+                encryption_disabled = conf['Properties']['Artifacts']['EncryptionDisabled']
+            if artifact_type == "S3" and encryption_disabled is True:
+                return CheckResult.FAILED
         return CheckResult.PASSED
 
 

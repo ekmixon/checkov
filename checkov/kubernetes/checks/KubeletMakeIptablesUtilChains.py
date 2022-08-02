@@ -16,10 +16,12 @@ class KubeletMakeIptablesUtilChains(BaseK8Check):
         return f'{conf["parent"]} - {conf["name"]}' if conf.get('name') else conf["parent"]
 
     def scan_spec_conf(self, conf):
-        if "command" in conf:
-            if "kubelet" in conf["command"]:            
-                if "--make-iptables-util-chains=true" not in conf["command"]:
-                    return CheckResult.FAILED
+        if (
+            "command" in conf
+            and "kubelet" in conf["command"]
+            and "--make-iptables-util-chains=true" not in conf["command"]
+        ):
+            return CheckResult.FAILED
 
         return CheckResult.PASSED
 

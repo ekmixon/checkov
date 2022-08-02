@@ -35,9 +35,9 @@ class BaseResourceValueCheck(BaseResourceCheck):
 
     @staticmethod
     def _is_variable_dependant(value: Any) -> bool:
-        if isinstance(value, str) and re.match(VARIABLE_DEPENDANT_REGEX, value):
-            return True
-        return False
+        return bool(
+            isinstance(value, str) and re.match(VARIABLE_DEPENDANT_REGEX, value)
+        )
 
     @staticmethod
     def _is_nesting_key(inspected_attributes: List[str], key: str) -> bool:
@@ -47,7 +47,7 @@ class BaseResourceValueCheck(BaseResourceCheck):
         :param key: JSONPath key of an attribute
         :return: True/False
         """
-        return any([x in key for x in inspected_attributes])
+        return any(x in key for x in inspected_attributes)
 
     def scan_resource_conf(self, conf: Dict[str_node, dict_node]) -> CheckResult:
         inspected_key = self.get_inspected_key()
@@ -59,7 +59,7 @@ class BaseResourceValueCheck(BaseResourceCheck):
                 # CFN files are parsed differently from terraform, which causes the path search above to behave differently.
                 # The tesult is path parts with integer indexes, instead of strings like '[0]'. This logic replaces
                 # those, allowing inspected_keys in checks to use the same syntax.
-                for i in range(0, len(match)):
+                for i in range(len(match)):
                     if type(match[i]) == int:
                         match[i] = f"[{match[i]}]"
 
@@ -74,10 +74,7 @@ class BaseResourceValueCheck(BaseResourceCheck):
                     if self._is_variable_dependant(value):
                         # If the tested attribute is variable-dependant, then result is PASSED
                         return CheckResult.PASSED
-                    if value in expected_values:
-                        return CheckResult.PASSED
-                    return CheckResult.FAILED
-
+                    return CheckResult.PASSED if value in expected_values else CheckResult.FAILED
         return self.missing_block_result
 
     @abstractmethod

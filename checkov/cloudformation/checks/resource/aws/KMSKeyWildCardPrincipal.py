@@ -17,16 +17,12 @@ def get_recursively(search_dict, field):
 
         elif isinstance(value, dict):
             results = get_recursively(value, field)
-            for result in results:
-                fields_found.append(result)
-
+            fields_found.extend(iter(results))
         elif isinstance(value, list):
             for item in value:
                 if isinstance(item, dict):
                     more_results = get_recursively(item, field)
-                    for another_result in more_results:
-                        fields_found.append(another_result)
-
+                    fields_found.extend(iter(more_results))
     return fields_found
 
 
@@ -42,18 +38,16 @@ class KMSKeyWildCardPrincipal(BaseResourceValueCheck):
         return 'Properties/KeyPolicy/Statement/Principal'
 
     def scan_resource_conf(self, conf):
-        if conf.get('Properties'):
-            if conf['Properties'].get('KeyPolicy'):
-                policy_block = conf['Properties']['KeyPolicy']
-                principals_list = get_recursively(policy_block, 'Principal')
-                for principal in principals_list:
-                    if isinstance(principal, dict):
-                        for principal_key, principal_value in principal.items():
-                            if principal_value == '*':
-                                return CheckResult.FAILED
-                    else:
-                        if principal == '*':
+        if conf.get('Properties') and conf['Properties'].get('KeyPolicy'):
+            policy_block = conf['Properties']['KeyPolicy']
+            principals_list = get_recursively(policy_block, 'Principal')
+            for principal in principals_list:
+                if isinstance(principal, dict):
+                    for principal_key, principal_value in principal.items():
+                        if principal_value == '*':
                             return CheckResult.FAILED
+                elif principal == '*':
+                    return CheckResult.FAILED
 
         return CheckResult.PASSED
 

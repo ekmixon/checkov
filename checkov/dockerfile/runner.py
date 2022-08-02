@@ -35,9 +35,11 @@ class Runner(BaseRunner):
             for root, d_names, f_names in os.walk(root_folder):
                 filter_ignored_paths(root, d_names, runner_filter.excluded_paths)
                 filter_ignored_paths(root, f_names, runner_filter.excluded_paths)
-                for file in f_names:
-                    if file in DOCKER_FILE_MASK:
-                        files_list.append(os.path.join(root, file))
+                files_list.extend(
+                    os.path.join(root, file)
+                    for file in f_names
+                    if file in DOCKER_FILE_MASK
+                )
 
             for file in files_list:
                 relative_file_path = f'/{os.path.relpath(file, os.path.commonprefix((root_folder, file)))}'
@@ -46,7 +48,7 @@ class Runner(BaseRunner):
                 except TypeError:
                     logging.info(f'Dockerfile skipping {file} as it is not a valid dockerfile template')
 
-        for docker_file_path in definitions.keys():
+        for docker_file_path, instructions in definitions.items():
 
             # There are a few cases here. If -f was used, there could be a leading / because it's an absolute path,
             # or there will be no leading slash; root_folder will always be none.
@@ -59,32 +61,34 @@ class Runner(BaseRunner):
 
             file_abs_path = os.path.abspath(path_to_convert)
             skipped_checks = collect_skipped_checks(definitions[docker_file_path])
-            instructions = definitions[docker_file_path]
-
             results = registry.scan(docker_file_path, instructions, skipped_checks,
                                     runner_filter)
             for check, check_result in results.items():
-                result_configuration = check_result['results_configuration']
                 startline = 1
                 endline = 1
                 result_instruction = ""
-                if result_configuration:
+                if result_configuration := check_result['results_configuration']:
                     startline = result_configuration['startline']
                     endline = result_configuration['endline']
                     result_instruction = result_configuration["instruction"]
 
                 codeblock = []
                 self.calc_record_codeblock(codeblock, definitions_raw, docker_file_path, endline, startline)
-                record = Record(check_id=check.id, bc_check_id=check.bc_id, check_name=check.name, check_result=check_result,
-                                code_block=codeblock,
-                                file_path=docker_file_path,
-                                file_line_range=[startline,
-                                                 endline],
-                                resource="{}.{}".format(docker_file_path,
-                                                        result_instruction,
-                                                        startline),
-                                evaluations=None, check_class=check.__class__.__module__,
-                                file_abs_path=file_abs_path, entity_tags=None)
+                record = Record(
+                    check_id=check.id,
+                    bc_check_id=check.bc_id,
+                    check_name=check.name,
+                    check_result=check_result,
+                    code_block=codeblock,
+                    file_path=docker_file_path,
+                    file_line_range=[startline, endline],
+                    resource=f"{docker_file_path}.{result_instruction}",
+                    evaluations=None,
+                    check_class=check.__class__.__module__,
+                    file_abs_path=file_abs_path,
+                    entity_tags=None,
+                )
+
                 report.add_record(record=record)
 
         return report

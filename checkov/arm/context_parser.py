@@ -25,7 +25,7 @@ class ContextParser(object):
         parameter_defaults = {}
         if 'parameters' in self.arm_template.keys():
             for parameter in self.arm_template['parameters']:
-                if parameter == '__startline__' or parameter == '__endline__':
+                if parameter in ['__startline__', '__endline__']:
                     continue
                 if 'defaultValue' in self.arm_template['parameters'][parameter].keys():
                     parameter_defaults[parameter] = self.arm_template['parameters'][parameter]["defaultValue"]
@@ -33,7 +33,7 @@ class ContextParser(object):
         variable_values = {}
         if 'variables' in self.arm_template.keys():
             for var in self.arm_template['variables']:
-                if var == '__startline__' or var == '__endline__':
+                if var in ['__startline__', '__endline__']:
                     continue
                 variable_values[var] = self.arm_template['variables'][var]
 
@@ -60,13 +60,17 @@ class ContextParser(object):
             try:
                 param = re.sub("\[variables\('|'\)]", "", self._get_from_dict(dict(self.arm_template),
                                                                               key_entry[:-1])[key_entry[-1]])
-                if param in variable_values.keys():
+                if param in variable_values:
                     self._set_in_dict(dict(self.arm_template), key_entry, variable_values[param])
                     logging.debug(
-                        "Replacing variable {} in file {} with default value: {}".format(param, self.arm_file,
-                                                                                         variable_values[param]))
+                        f"Replacing variable {param} in file {self.arm_file} with default value: {variable_values[param]}"
+                    )
+
                 else:
-                    logging.debug("Variable {} not found in evaluated variables in file {}".format(param, self.arm_file))
+                    logging.debug(
+                        f"Variable {param} not found in evaluated variables in file {self.arm_file}"
+                    )
+
             except TypeError as e:
                 logging.debug(f'Failed to evaluate param in {self.arm_file}, error:')
                 logging.debug(e, stack_info=True)
@@ -93,8 +97,9 @@ class ContextParser(object):
         return f"{arm_resource['name']}"
 
     def extract_arm_resource_code_lines(self, arm_resource):
-        find_lines_result_list = list(self.find_lines(arm_resource, '__startline__'))
-        if len(find_lines_result_list) >= 1:
+        if find_lines_result_list := list(
+            self.find_lines(arm_resource, '__startline__')
+        ):
             start_line = min(find_lines_result_list)
             end_line = max(list(self.find_lines(arm_resource, '__endline__')))
 
@@ -108,37 +113,35 @@ class ContextParser(object):
     def find_lines(node, kv):
         if isinstance(node, list):
             for i in node:
-                for x in ContextParser.find_lines(i, kv):
-                    yield x
+                yield from ContextParser.find_lines(i, kv)
         elif isinstance(node, dict):
             if kv in node:
                 yield node[kv]
             for j in node.values():
-                for x in ContextParser.find_lines(j, kv):
-                    yield x
+                yield from ContextParser.find_lines(j, kv)
 
     @staticmethod
     def collect_skip_comments(resource):
         skipped_checks = []
         bc_id_mapping = bc_integration.get_id_mapping()
         ckv_to_bc_id_mapping = bc_integration.get_ckv_to_bc_id_mapping()
-        if "metadata" in resource:
-            if "checkov" in resource["metadata"]:
-                for index, item in enumerate(force_list(resource["metadata"]["checkov"])):
-                    skip_search = re.search(COMMENT_REGEX, str(item))
-                    if skip_search:
-                        skipped_check = {
-                            'id': skip_search.group(1),
-                            'suppress_comment': skip_search.group(2)[1:] if skip_search.group(
-                                2) else "No comment provided"
-                        }
-                        if bc_id_mapping and skipped_check["id"] in bc_id_mapping:
-                            skipped_check["bc_id"] = skipped_check["id"]
-                            skipped_check["id"] = bc_id_mapping[skipped_check["id"]]
-                        elif ckv_to_bc_id_mapping:
-                            skipped_check["bc_id"] = ckv_to_bc_id_mapping.get(skipped_check["id"])
+        if "metadata" in resource and "checkov" in resource["metadata"]:
+            for item in force_list(resource["metadata"]["checkov"]):
+                if skip_search := re.search(COMMENT_REGEX, str(item)):
+                    skipped_check = {
+                        'id': skip_search[1],
+                        'suppress_comment': skip_search[2][1:]
+                        if skip_search[2]
+                        else "No comment provided",
+                    }
 
-                        skipped_checks.append(skipped_check)
+                    if bc_id_mapping and skipped_check["id"] in bc_id_mapping:
+                        skipped_check["bc_id"] = skipped_check["id"]
+                        skipped_check["id"] = bc_id_mapping[skipped_check["id"]]
+                    elif ckv_to_bc_id_mapping:
+                        skipped_check["bc_id"] = ckv_to_bc_id_mapping.get(skipped_check["id"])
+
+                    skipped_checks.append(skipped_check)
 
         return skipped_checks
 
@@ -201,7 +204,7 @@ class ContextParser(object):
 
         for key in keys:
             for i in key:
-                if isinstance(i, list) or isinstance(i, dict):
+                if isinstance(i, (list, dict)):
                     keys.remove(key)
 
             # Remove parameter

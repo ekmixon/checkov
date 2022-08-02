@@ -16,14 +16,19 @@ class CustomRoleDefinitionSubscriptionOwner(BaseResourceCheck):
 
     def scan_resource_conf(self, conf):
         subscription = re.compile(r"\/|\/subscriptions\/[\w\d-]+$|\[subscription\(\).id\]")
-        if "properties" in conf:
-            if "assignableScopes" in conf["properties"]:
-                if any(re.match(subscription, scope) for scope in conf["properties"]["assignableScopes"]):
-                    if "permissions" in conf["properties"]:
-                        if conf["properties"]["permissions"]:
-                            for permission in conf["properties"]["permissions"]:
-                                if "actions" in permission and "*" in permission["actions"]:
-                                    return CheckResult.FAILED
+        if (
+            "properties" in conf
+            and "assignableScopes" in conf["properties"]
+            and any(
+                re.match(subscription, scope)
+                for scope in conf["properties"]["assignableScopes"]
+            )
+            and "permissions" in conf["properties"]
+            and conf["properties"]["permissions"]
+        ):
+            for permission in conf["properties"]["permissions"]:
+                if "actions" in permission and "*" in permission["actions"]:
+                    return CheckResult.FAILED
         return CheckResult.PASSED
 
 check = CustomRoleDefinitionSubscriptionOwner()

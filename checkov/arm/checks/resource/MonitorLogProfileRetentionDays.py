@@ -13,14 +13,19 @@ class MonitorLogProfileRetentionDays(BaseResourceCheck):
         super().__init__(name=name, id=id, categories=categories, supported_resources=supported_resources)
 
     def scan_resource_conf(self, conf):
-        if "properties" in conf:
-            if "retentionPolicy" in conf["properties"]:
-                if "enabled" in conf["properties"]["retentionPolicy"]:
-                    if str(conf["properties"]["retentionPolicy"]["enabled"]).lower() == "true":
-                        if "days" in conf["properties"]["retentionPolicy"]:
-                            if force_int(conf["properties"]["retentionPolicy"]["days"]) >= 365 or \
-                                    force_int(conf["properties"]["retentionPolicy"]["days"]) == 0:
-                                return CheckResult.PASSED
+        if (
+            "properties" in conf
+            and "retentionPolicy" in conf["properties"]
+            and "enabled" in conf["properties"]["retentionPolicy"]
+            and str(conf["properties"]["retentionPolicy"]["enabled"]).lower()
+            == "true"
+            and "days" in conf["properties"]["retentionPolicy"]
+            and (
+                force_int(conf["properties"]["retentionPolicy"]["days"]) >= 365
+                or force_int(conf["properties"]["retentionPolicy"]["days"]) == 0
+            )
+        ):
+            return CheckResult.PASSED
         return CheckResult.FAILED
 
 check = MonitorLogProfileRetentionDays()

@@ -19,20 +19,25 @@ class AbsSecurityGroupUnrestrictedIngress(BaseResourceCheck):
         """
         rules = []
         if conf['Type'] == 'AWS::EC2::SecurityGroup':
-            if 'Properties' in conf.keys():
-                if 'SecurityGroupIngress' in conf['Properties'].keys():
-                    rules = conf['Properties']['SecurityGroupIngress']
+            if (
+                'Properties' in conf.keys()
+                and 'SecurityGroupIngress' in conf['Properties'].keys()
+            ):
+                rules = conf['Properties']['SecurityGroupIngress']
         elif conf['Type'] == 'AWS::EC2::SecurityGroupIngress':
             if 'Properties' in conf.keys():
-                rules = []
-                rules.append(conf['Properties'])
-
+                rules = [conf['Properties']]
         for rule in rules:
-            if rule.__contains__('FromPort') and rule.__contains__('ToPort'):
-                if isinstance(rule['FromPort'], int) and isinstance(rule['ToPort'], int):
-                    if int(rule['FromPort']) == int(self.port) and int(rule['ToPort']) == int(self.port):
-                        if 'CidrIp' in rule.keys() and rule['CidrIp'] == '0.0.0.0/0':  # nosec  # nosec
-                            return CheckResult.FAILED
-                        elif 'CidrIpv6' in rule.keys() and rule['CidrIpv6'] in ['::/0', '0000:0000:0000:0000:0000:0000:0000:0000/0']:
-                            return CheckResult.FAILED
+            if (
+                rule.__contains__('FromPort')
+                and rule.__contains__('ToPort')
+                and isinstance(rule['FromPort'], int)
+                and isinstance(rule['ToPort'], int)
+                and int(rule['FromPort']) == int(self.port)
+                and int(rule['ToPort']) == int(self.port)
+            ):
+                if 'CidrIp' in rule.keys() and rule['CidrIp'] == '0.0.0.0/0':  # nosec  # nosec
+                    return CheckResult.FAILED
+                elif 'CidrIpv6' in rule.keys() and rule['CidrIpv6'] in ['::/0', '0000:0000:0000:0000:0000:0000:0000:0000/0']:
+                    return CheckResult.FAILED
         return CheckResult.PASSED

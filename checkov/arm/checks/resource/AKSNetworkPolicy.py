@@ -12,17 +12,18 @@ class AKSNetworkPolicy(BaseResourceCheck):
         super().__init__(name=name, id=id, categories=categories, supported_resources=supported_resources)
 
     def scan_resource_conf(self, conf):
-        if "apiVersion" in conf:
-            if conf["apiVersion"] == "2017-08-31":
-                # No networkProfile option to configure
-                return CheckResult.FAILED
+        if "apiVersion" in conf and conf["apiVersion"] == "2017-08-31":
+            # No networkProfile option to configure
+            return CheckResult.FAILED
 
-        if "properties" in conf:
-            if "networkProfile" in conf["properties"]:
-                if "networkPolicy" in conf["properties"]["networkProfile"]:
-                    if conf["properties"]["networkProfile"]["networkPolicy"] != "" and \
-                            conf["properties"]["networkProfile"]["networkPolicy"] != None:
-                        return CheckResult.PASSED
+        if (
+            "properties" in conf
+            and "networkProfile" in conf["properties"]
+            and "networkPolicy" in conf["properties"]["networkProfile"]
+            and conf["properties"]["networkProfile"]["networkPolicy"]
+            not in ["", None]
+        ):
+            return CheckResult.PASSED
         return CheckResult.FAILED
 
 check = AKSNetworkPolicy()

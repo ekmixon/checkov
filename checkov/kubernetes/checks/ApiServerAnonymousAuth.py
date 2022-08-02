@@ -14,10 +14,15 @@ class ApiServerAnonymousAuth(BaseK8Check):
         return f'{conf["parent"]} - {conf["name"]}' if conf.get('name') else conf["parent"]
 
     def scan_spec_conf(self, conf):
-        if "command" in conf:
-            if "kube-apiserver" in conf["command"]:
-                if "--anonymous-auth=true" in conf["command"] or "--anonymous-auth=false" not in conf["command"]:
-                    return CheckResult.FAILED
+        if (
+            "command" in conf
+            and "kube-apiserver" in conf["command"]
+            and (
+                "--anonymous-auth=true" in conf["command"]
+                or "--anonymous-auth=false" not in conf["command"]
+            )
+        ):
+            return CheckResult.FAILED
 
         return CheckResult.PASSED
 

@@ -44,7 +44,7 @@ class BaseCheckRegistry(object):
 
         for entity in check.supported_entities:
             checks = self.wildcard_checks if self._is_wildcard(entity) else self.checks
-            if not any(c.id == check.id for c in checks[entity]):
+            if all(c.id != check.id for c in checks[entity]):
                 checks[entity].append(check)
 
         BaseCheckRegistry.__all_registered_checks.append(check)
@@ -79,13 +79,12 @@ class BaseCheckRegistry(object):
         if not self.wildcard_checks:
             # Optimisation: When no wildcards are used, we can use the list in self.checks
             return self.checks.get(entity) or []
-        else:
-            res = self.checks[entity].copy() if entity in self.checks.keys() else []
-            # check wildcards
-            for pattern, checks in self.wildcard_checks.items():
-                if fnmatch.fnmatchcase(entity, pattern):
-                    res += checks
-            return res
+        res = self.checks[entity].copy() if entity in self.checks.keys() else []
+        # check wildcards
+        for pattern, checks in self.wildcard_checks.items():
+            if fnmatch.fnmatchcase(entity, pattern):
+                res += checks
+        return res
 
     def set_checks_allowlist(self, runner_filter: RunnerFilter) -> None:
         if runner_filter.checks:
@@ -113,9 +112,8 @@ class BaseCheckRegistry(object):
         checks = self.get_checks(entity_type)
         for check in checks:
             skip_info: _SkippedCheck = {}
-            if skipped_checks:
-                if check.id in [x["id"] for x in skipped_checks]:
-                    skip_info = [x for x in skipped_checks if x["id"] == check.id][0]
+            if skipped_checks and check.id in [x["id"] for x in skipped_checks]:
+                skip_info = [x for x in skipped_checks if x["id"] == check.id][0]
 
             if runner_filter.should_run_check(check.id, check.bc_id):
                 result = self.run_check(check, entity_configuration, entity_name, entity_type, scanned_file, skip_info)
@@ -131,15 +129,14 @@ class BaseCheckRegistry(object):
         scanned_file: str,
         skip_info: _SkippedCheck,
     ) -> Dict[str, Any]:
-        self.logger.debug("Running check: {} on file {}".format(check.name, scanned_file))
-        result = check.run(
+        self.logger.debug(f"Running check: {check.name} on file {scanned_file}")
+        return check.run(
             scanned_file=scanned_file,
             entity_configuration=entity_configuration,
             entity_name=entity_name,
             entity_type=entity_type,
             skip_info=skip_info,
         )
-        return result
 
     @staticmethod
     def _directory_has_init_py(directory: str) -> bool:
@@ -162,12 +159,15 @@ class BaseCheckRegistry(object):
         when a .py file has syntax error
         """
         directory = os.path.expanduser(directory)
-        self.logger.debug("Loading external checks from {}".format(directory))
+        self.logger.debug(f"Loading external checks from {directory}")
         sys.path.insert(1, directory)
 
         with os.scandir(directory) as directory_content:
             if not self._directory_has_init_py(directory):
-                self.logger.info("No __init__.py found in {}. Cannot load any check here.".format(directory))
+                self.logger.info(
+                    f"No __init__.py found in {directory}. Cannot load any check here."
+                )
+
             else:
                 for entry in directory_content:
                     if self._file_can_be_imported(entry):
@@ -177,7 +177,7 @@ class BaseCheckRegistry(object):
                         # of the checks, which need to be handled specially.
                         try:
                             BaseCheckRegistry.__loading_external_checks = True
-                            self.logger.debug("Importing external check '{}'".format(check_name))
+                            self.logger.debug(f"Importing external check '{check_name}'")
                             importlib.import_module(check_name)
                         except SyntaxError as e:
                             self.logger.error(

@@ -11,10 +11,14 @@ class HealthcheckExists(BaseDockerfileCheck):
         super().__init__(name=name, id=id, categories=categories, supported_instructions=supported_instructions)
 
     def scan_entity_conf(self, conf):
-        for instruction, content in conf.items():
-            if instruction == "HEALTHCHECK":
-                return CheckResult.PASSED, conf[instruction][0]
-        return CheckResult.FAILED, None
+        return next(
+            (
+                (CheckResult.PASSED, conf[instruction][0])
+                for instruction, content in conf.items()
+                if instruction == "HEALTHCHECK"
+            ),
+            (CheckResult.FAILED, None),
+        )
 
 
 check = HealthcheckExists()

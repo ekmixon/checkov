@@ -23,11 +23,14 @@ class BaseAttributeSolver(BaseSolver):
 
     def run(self, graph_connector: DiGraph) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
         executer = ThreadPoolExecutor()
-        jobs = []
         passed_vertices = []
         failed_vertices = []
-        for _, data in graph_connector.nodes(data=True):
-            jobs.append(executer.submit(self._process_node, data, passed_vertices, failed_vertices))
+        jobs = [
+            executer.submit(
+                self._process_node, data, passed_vertices, failed_vertices
+            )
+            for _, data in graph_connector.nodes(data=True)
+        ]
 
         concurrent.futures.wait(jobs)
         return passed_vertices, failed_vertices
@@ -35,12 +38,14 @@ class BaseAttributeSolver(BaseSolver):
     def get_operation(self, vertex: Dict[str, Any]) -> bool:
         if self.attribute and re.match(WILDCARD_PATTERN, self.attribute):
             attribute_patterns = self.get_attribute_patterns(self.attribute)
-            attribute_matches = [
+            if attribute_matches := [
                 attr
                 for attr in vertex
-                if any(re.match(attribute_pattern, attr) for attribute_pattern in attribute_patterns)
-            ]
-            if attribute_matches:
+                if any(
+                    re.match(attribute_pattern, attr)
+                    for attribute_pattern in attribute_patterns
+                )
+            ]:
                 return self.resource_type_pred(vertex, self.resource_types) and any(
                     self._get_operation(vertex=vertex, attribute=attr) for attr in attribute_matches
                 )

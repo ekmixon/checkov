@@ -12,10 +12,14 @@ class AddExists(BaseDockerfileCheck):
 
     def scan_entity_conf(self, conf):
         i=0
-        for instruction in conf:
-            if instruction['instruction'] == "ADD":
-                return CheckResult.FAILED, conf[i]
-        return CheckResult.PASSED,None
+        return next(
+            (
+                (CheckResult.FAILED, conf[i])
+                for instruction in conf
+                if instruction['instruction'] == "ADD"
+            ),
+            (CheckResult.PASSED, None),
+        )
 
 
 check = AddExists()

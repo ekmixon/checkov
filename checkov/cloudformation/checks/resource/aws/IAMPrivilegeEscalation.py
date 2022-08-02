@@ -9,8 +9,7 @@ class cloudsplainingPrivilegeEscalation(BaseCloudsplainingIAMCheck):
         super().__init__(name=name, id=id)
 
     def cloudsplaining_analysis(self, policy):
-        escalation = policy.allows_privilege_escalation
-        return escalation
+        return policy.allows_privilege_escalation
 
 
 check = cloudsplainingPrivilegeEscalation()

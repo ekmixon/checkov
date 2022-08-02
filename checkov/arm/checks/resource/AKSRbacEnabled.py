@@ -12,15 +12,16 @@ class AKSRbacEnabled(BaseResourceCheck):
         super().__init__(name=name, id=id, categories=categories, supported_resources=supported_resources)
 
     def scan_resource_conf(self, conf):
-        if "apiVersion" in conf:
-            if conf["apiVersion"] == "2017-08-31":
-                # No enableRBAC option to configure
-                return CheckResult.FAILED
+        if "apiVersion" in conf and conf["apiVersion"] == "2017-08-31":
+            # No enableRBAC option to configure
+            return CheckResult.FAILED
 
-        if "properties" in conf:
-            if "enableRBAC" in conf["properties"]:
-                if str(conf["properties"]["enableRBAC"]).lower() == "true":
-                    return CheckResult.PASSED
+        if (
+            "properties" in conf
+            and "enableRBAC" in conf["properties"]
+            and str(conf["properties"]["enableRBAC"]).lower() == "true"
+        ):
+            return CheckResult.PASSED
         return CheckResult.FAILED
 
 check = AKSRbacEnabled()

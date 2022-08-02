@@ -16,22 +16,20 @@ class KubernetesDashboard(BaseK8Check):
         return f'{conf["parent"]} - {conf["name"]}' if conf.get('name') else conf["parent"]
 
     def scan_spec_conf(self, conf):
-        if "image" in conf:
-            conf_image = conf["image"]
-            if not isinstance(conf_image, str):
-                return CheckResult.FAILED
-            if ("kubernetes-dashboard" in conf_image or "kubernetesui" in conf_image):
-                return CheckResult.FAILED
-        else:
+        if "image" not in conf:
             return CheckResult.FAILED
-        if "parent_metadata" in conf:
-            if conf["parent_metadata"].get("labels"):
-                if "app" in conf["parent_metadata"]["labels"]:
-                    if conf["parent_metadata"]["labels"]["app"] == "kubernetes-dashboard":
-                        return CheckResult.FAILED
-                elif "k8s-app" in conf["parent_metadata"]["labels"]:
-                    if conf["parent_metadata"]["labels"]["k8s-app"] == "kubernetes-dashboard":
-                        return CheckResult.FAILED
+        conf_image = conf["image"]
+        if not isinstance(conf_image, str):
+            return CheckResult.FAILED
+        if ("kubernetes-dashboard" in conf_image or "kubernetesui" in conf_image):
+            return CheckResult.FAILED
+        if "parent_metadata" in conf and conf["parent_metadata"].get("labels"):
+            if "app" in conf["parent_metadata"]["labels"]:
+                if conf["parent_metadata"]["labels"]["app"] == "kubernetes-dashboard":
+                    return CheckResult.FAILED
+            elif "k8s-app" in conf["parent_metadata"]["labels"]:
+                if conf["parent_metadata"]["labels"]["k8s-app"] == "kubernetes-dashboard":
+                    return CheckResult.FAILED
         return CheckResult.PASSED
 
 

@@ -15,26 +15,26 @@ class DefaultNamespace(BaseK8Check):
 
     def get_resource_id(self, conf):
         if "namespace" in conf["metadata"]:
-            return "{}.{}.{}".format(conf["kind"], conf["metadata"]["name"], conf["metadata"]["namespace"])
+            return f'{conf["kind"]}.{conf["metadata"]["name"]}.{conf["metadata"]["namespace"]}'
+
         else:
-            return "{}.{}.default".format(conf["kind"], conf["metadata"]["name"])
+            return f'{conf["kind"]}.{conf["metadata"]["name"]}.default'
 
     def scan_spec_conf(self, conf):
-        if "metadata" in conf:
-            if "namespace" in conf["metadata"]:
-                if conf["metadata"]["namespace"] != "default":
-                    return CheckResult.PASSED
-                else:
-                    if conf["kind"] == "ServiceAccount" and conf["metadata"]["name"] == "default":
-                        return CheckResult.PASSED
-                    if conf["kind"] == "Service" and conf["metadata"]["name"] == "kubernetes":
-                       return CheckResult.PASSED
-            # If namespace not defined it is default -> Ignore default Service account and kubernetes service
+        if "metadata" not in conf:
+            return CheckResult.FAILED
+        if "namespace" in conf["metadata"]:
+            if conf["metadata"]["namespace"] != "default":
+                return CheckResult.PASSED
             if conf["kind"] == "ServiceAccount" and conf["metadata"]["name"] == "default":
                 return CheckResult.PASSED
             if conf["kind"] == "Service" and conf["metadata"]["name"] == "kubernetes":
-                return CheckResult.PASSED
-            return CheckResult.FAILED
+               return CheckResult.PASSED
+        # If namespace not defined it is default -> Ignore default Service account and kubernetes service
+        if conf["kind"] == "ServiceAccount" and conf["metadata"]["name"] == "default":
+            return CheckResult.PASSED
+        if conf["kind"] == "Service" and conf["metadata"]["name"] == "kubernetes":
+            return CheckResult.PASSED
         return CheckResult.FAILED
 
 check = DefaultNamespace()

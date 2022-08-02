@@ -14,16 +14,19 @@ class ApiServerTlsCertAndKey(BaseK8Check):
         return f'{conf["parent"]} - {conf["name"]}' if conf.get('name') else conf["parent"]
 
     def scan_spec_conf(self, conf):
-        if "command" in conf and conf["command"] is not None:
-            if "kube-apiserver" in conf["command"]:
-                hasCertCommand = False
-                hasKeyCommand = False
-                for command in conf["command"]:
-                    if command.startswith("--tls-cert-file"):
-                        hasCertCommand = True
-                    elif command.startswith("--tls-private-key-file"):
-                        hasKeyCommand = True
-                return CheckResult.PASSED if hasCertCommand and hasKeyCommand else CheckResult.FAILED
+        if (
+            "command" in conf
+            and conf["command"] is not None
+            and "kube-apiserver" in conf["command"]
+        ):
+            hasCertCommand = False
+            hasKeyCommand = False
+            for command in conf["command"]:
+                if command.startswith("--tls-cert-file"):
+                    hasCertCommand = True
+                elif command.startswith("--tls-private-key-file"):
+                    hasKeyCommand = True
+            return CheckResult.PASSED if hasCertCommand and hasKeyCommand else CheckResult.FAILED
 
         return CheckResult.PASSED
 

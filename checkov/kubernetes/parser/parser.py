@@ -20,25 +20,27 @@ def parse(filename):
             (template, template_lines) = k8_yaml.load(filename)
         if filename.endswith(".json"):
             (template, template_lines) = k8_json.load(filename)
-        if template:
-            if isinstance(template, list):
-                for t in template:
-                    if t and isinstance(t, dict) and 'apiVersion' in t.keys() and 'kind' in t.keys():
-                        valid_templates.append(t)
-            else:
-                return
-        else:
+        if not template or not isinstance(template, list):
             return
+        valid_templates.extend(
+            t
+            for t in template
+            if t
+            and isinstance(t, dict)
+            and 'apiVersion' in t.keys()
+            and 'kind' in t.keys()
+        )
+
     except IOError as e:
-        if e.errno == 2:
+        if e.errno == 13:
+            logger.error('Permission denied when accessing template file: %s',
+                         filename)
+            return
+        elif e.errno == 2:
             logger.error('Template file not found: %s', filename)
             return
         elif e.errno == 21:
             logger.error('Template references a directory, not a file: %s',
-                         filename)
-            return
-        elif e.errno == 13:
-            logger.error('Permission denied when accessing template file: %s',
                          filename)
             return
     except UnicodeDecodeError as err:

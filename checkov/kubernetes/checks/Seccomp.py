@@ -21,52 +21,59 @@ class Seccomp(BaseK8Check):
 
     def get_resource_id(self, conf):
         if "namespace" in conf["metadata"]:
-            return "{}.{}.{}".format(conf["kind"], conf["metadata"]["name"], conf["metadata"]["namespace"])
+            return f'{conf["kind"]}.{conf["metadata"]["name"]}.{conf["metadata"]["namespace"]}'
+
         else:
-            return "{}.{}.default".format(conf["kind"], conf["metadata"]["name"])
+            return f'{conf["kind"]}.{conf["metadata"]["name"]}.default'
 
     def scan_spec_conf(self, conf):
         metadata = {}
 
         if conf['kind'] == 'Pod':
-            security_profile = dpath.search(conf, 'spec/securityContext/seccompProfile/type')
-            if security_profile:
+            if security_profile := dpath.search(
+                conf, 'spec/securityContext/seccompProfile/type'
+            ):
                 security_profile = dpath.get(conf, 'spec/securityContext/seccompProfile/type')
                 return CheckResult.PASSED if security_profile == 'RuntimeDefault' else CheckResult.FAILED
             if "metadata" in conf:
                 metadata = conf["metadata"]
         if conf['kind'] == 'Deployment':
-            security_profile = dpath.search(conf, 'spec/template/spec/securityContext/seccompProfile/type')
-            if security_profile:
+            if security_profile := dpath.search(
+                conf, 'spec/template/spec/securityContext/seccompProfile/type'
+            ):
                 security_profile = dpath.get(conf, 'spec/template/spec/securityContext/seccompProfile/type')
                 return CheckResult.PASSED if security_profile == 'RuntimeDefault' else CheckResult.FAILED
             if "metadata" in conf:
                 metadata = conf["metadata"]
         if conf['kind'] == 'StatefulSet':
-            security_profile = dpath.search(conf, 'spec/template/spec/securityContext/seccompProfile/type')
-            if security_profile:
+            if security_profile := dpath.search(
+                conf, 'spec/template/spec/securityContext/seccompProfile/type'
+            ):
                 security_profile = dpath.get(conf, 'spec/template/spec/securityContext/seccompProfile/type')
                 return CheckResult.PASSED if security_profile == 'RuntimeDefault' else CheckResult.FAILED
             if "metadata" in conf:
-                metadata = conf["metadata"]            
+                metadata = conf["metadata"]
         elif conf['kind'] == 'CronJob':
-            if "spec" in conf:
-                if "jobTemplate" in conf["spec"]:
-                    if "spec" in conf["spec"]["jobTemplate"]:
-                        if "template" in conf["spec"]["jobTemplate"]["spec"]:
-                            if "metadata" in conf["spec"]["jobTemplate"]["spec"]["template"]:
-                                metadata = conf["spec"]["jobTemplate"]["spec"]["template"]["metadata"]
+            if (
+                "spec" in conf
+                and "jobTemplate" in conf["spec"]
+                and "spec" in conf["spec"]["jobTemplate"]
+                and "template" in conf["spec"]["jobTemplate"]["spec"]
+                and "metadata" in conf["spec"]["jobTemplate"]["spec"]["template"]
+            ):
+                metadata = conf["spec"]["jobTemplate"]["spec"]["template"]["metadata"]
         else:
             inner_metadata = self.get_inner_entry(conf, "metadata")
-            metadata = inner_metadata if inner_metadata else metadata
+            metadata = inner_metadata or metadata
 
-        if metadata:
-            if metadata.get('annotations'):
-                for annotation in force_list(metadata["annotations"]):
-                    for key in annotation:
-                        if "seccomp.security.alpha.kubernetes.io/pod" in key:
-                            if "docker/default" in annotation[key] or "runtime/default" in annotation[key]:
-                                return CheckResult.PASSED
+        if metadata and metadata.get('annotations'):
+            for annotation in force_list(metadata["annotations"]):
+                for key in annotation:
+                    if "seccomp.security.alpha.kubernetes.io/pod" in key and (
+                        "docker/default" in annotation[key]
+                        or "runtime/default" in annotation[key]
+                    ):
+                        return CheckResult.PASSED
         return CheckResult.FAILED
 
 

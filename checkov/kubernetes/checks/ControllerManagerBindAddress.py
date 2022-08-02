@@ -14,14 +14,13 @@ class ControllerManagerBindAddress(BaseK8Check):
         return f'{conf["parent"]} - {conf["name"]}' if conf.get('name') else conf["parent"]
 
     def scan_spec_conf(self, conf):
-        if "command" in conf:
-            if "kube-controller-manager" in conf["command"]:
-                for cmd in conf["command"]:
-                    if "=" in cmd:
-                        [key, value, *_] = cmd.split("=")
-                        if key == "--bind-address" and value == "127.0.0.1":
-                            return CheckResult.PASSED
-                return CheckResult.FAILED
+        if "command" in conf and "kube-controller-manager" in conf["command"]:
+            for cmd in conf["command"]:
+                if "=" in cmd:
+                    [key, value, *_] = cmd.split("=")
+                    if key == "--bind-address" and value == "127.0.0.1":
+                        return CheckResult.PASSED
+            return CheckResult.FAILED
 
         return CheckResult.PASSED
 

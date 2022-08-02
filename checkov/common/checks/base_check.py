@@ -23,7 +23,7 @@ class BaseCheck(metaclass=MultiSignatureMeta):
         self.categories = categories
         self.block_type = block_type
         self.supported_entities = supported_entities
-        self.logger = logging.getLogger("{}".format(self.__module__))
+        self.logger = logging.getLogger(f"{self.__module__}")
         self.evaluated_keys: List[str] = []
 
     def run(
@@ -38,32 +38,23 @@ class BaseCheck(metaclass=MultiSignatureMeta):
         if skip_info:
             check_result["result"] = CheckResult.SKIPPED
             check_result["suppress_comment"] = skip_info["suppress_comment"]
-            message = 'File {}, {} "{}.{}" check "{}" Result: {}, Suppression comment: {} '.format(
-                scanned_file,
-                self.block_type,
-                entity_type,
-                entity_name,
-                self.name,
-                check_result,
-                check_result["suppress_comment"],
-            )
+            message = f'File {scanned_file}, {self.block_type} "{entity_type}.{entity_name}" check "{self.name}" Result: {check_result}, Suppression comment: {check_result["suppress_comment"]} '
+
             self.logger.debug(message)
         else:
             try:
                 self.evaluated_keys = []
                 check_result["result"] = self.scan_entity_conf(entity_configuration, entity_type)
                 check_result["evaluated_keys"] = self.get_evaluated_keys()
-                message = 'File {}, {}  "{}.{}" check "{}" Result: {} '.format(
-                    scanned_file, self.block_type, entity_type, entity_name, self.name, check_result
-                )
+                message = f'File {scanned_file}, {self.block_type}  "{entity_type}.{entity_name}" check "{self.name}" Result: {check_result} '
+
                 self.logger.debug(message)
 
             except Exception as e:
                 self.logger.error(
-                    "Failed to run check: {} for configuration: {} at file: {}".format(
-                        self.name, str(entity_configuration), scanned_file
-                    )
+                    f"Failed to run check: {self.name} for configuration: {entity_configuration} at file: {scanned_file}"
                 )
+
                 raise e
         return check_result
 

@@ -13,24 +13,30 @@ class GlueDataCatalogEncryption(BaseResourceCheck):
     def scan_resource_conf(self, conf):
         connection_encrypted = False
         encrypted_at_rest = False
-        if 'Properties' in conf.keys():
-            if 'DataCatalogEncryptionSettings' in conf['Properties'].keys():
-                dc_enc_settings = conf['Properties']['DataCatalogEncryptionSettings']
-                if 'ConnectionPasswordEncryption' in dc_enc_settings.keys():
-                    con_pass_enc = dc_enc_settings['ConnectionPasswordEncryption']
-                    if 'ReturnConnectionPasswordEncrypted' in con_pass_enc.keys():
-                        if con_pass_enc['ReturnConnectionPasswordEncrypted'] == True:
-                            connection_encrypted = True
+        if (
+            'Properties' in conf.keys()
+            and 'DataCatalogEncryptionSettings' in conf['Properties'].keys()
+        ):
+            dc_enc_settings = conf['Properties']['DataCatalogEncryptionSettings']
+            if 'ConnectionPasswordEncryption' in dc_enc_settings.keys():
+                con_pass_enc = dc_enc_settings['ConnectionPasswordEncryption']
+                if (
+                    'ReturnConnectionPasswordEncrypted' in con_pass_enc.keys()
+                    and con_pass_enc['ReturnConnectionPasswordEncrypted'] == True
+                ):
+                    connection_encrypted = True
 
-                if 'EncryptionAtRest' in dc_enc_settings.keys():
-                    enc_at_rest = dc_enc_settings['EncryptionAtRest']
-                    if 'CatalogEncryptionMode' in enc_at_rest.keys():
-                        if enc_at_rest['CatalogEncryptionMode'] == "SSE-KMS":
-                            encrypted_at_rest = True
+            if 'EncryptionAtRest' in dc_enc_settings.keys():
+                enc_at_rest = dc_enc_settings['EncryptionAtRest']
+                if (
+                    'CatalogEncryptionMode' in enc_at_rest.keys()
+                    and enc_at_rest['CatalogEncryptionMode'] == "SSE-KMS"
+                ):
+                    encrypted_at_rest = True
 
         if connection_encrypted and encrypted_at_rest:
             return CheckResult.PASSED
-        
+
         return CheckResult.FAILED
 
 

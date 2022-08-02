@@ -19,8 +19,7 @@ class ReferenceLatestTag(BaseDockerfileCheck):
 
         for content in conf:
             base_image = content["value"]
-            multi_stage = re.match(MULTI_STAGE_PATTERN, base_image)
-            if multi_stage:
+            if multi_stage := re.match(MULTI_STAGE_PATTERN, base_image):
                 base_image = multi_stage[1]
                 stages.append(multi_stage[2])
 

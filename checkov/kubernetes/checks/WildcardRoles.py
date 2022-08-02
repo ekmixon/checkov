@@ -12,21 +12,25 @@ class WildcardRoles(BaseK8Check):
 
     def get_resource_id(self, conf):
         if "namespace" in conf["metadata"]:
-            return "{}.{}.{}".format(conf["kind"], conf["metadata"]["name"], conf["metadata"]["namespace"])
+            return f'{conf["kind"]}.{conf["metadata"]["name"]}.{conf["metadata"]["namespace"]}'
+
         else:
-            return "{}.{}.default".format(conf["kind"], conf["metadata"]["name"])
+            return f'{conf["kind"]}.{conf["metadata"]["name"]}.default'
 
     def scan_spec_conf(self, conf):
         if isinstance(conf.get("rules"), list) and len(conf.get("rules")) > 0:
-            if "apiGroups" in conf["rules"][0]:
-                if any("*" in s for s in conf["rules"][0]["apiGroups"]):
-                    return CheckResult.FAILED
-            if "resources" in conf["rules"][0]:
-                if any("*" in s for s in conf["rules"][0]["resources"]):
-                    return CheckResult.FAILED
-            if "verbs" in conf["rules"][0]:
-                if any("*" in s for s in conf["rules"][0]["verbs"]):
-                    return CheckResult.FAILED
+            if "apiGroups" in conf["rules"][0] and any(
+                "*" in s for s in conf["rules"][0]["apiGroups"]
+            ):
+                return CheckResult.FAILED
+            if "resources" in conf["rules"][0] and any(
+                "*" in s for s in conf["rules"][0]["resources"]
+            ):
+                return CheckResult.FAILED
+            if "verbs" in conf["rules"][0] and any(
+                "*" in s for s in conf["rules"][0]["verbs"]
+            ):
+                return CheckResult.FAILED
 
         return CheckResult.PASSED
 

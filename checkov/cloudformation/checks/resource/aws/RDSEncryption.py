@@ -13,10 +13,12 @@ class RDSEncryption(BaseResourceValueCheck):
     def scan_resource_conf(self, conf):
         # If DB is Aurora then Encryption is set in other resource
         # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-rds-database-instance.html#cfn-rds-dbinstance-storageencrypted
-        if 'Properties' in conf.keys():
-            if 'Engine' in conf['Properties'].keys():
-                if 'aurora' in conf['Properties']['Engine']:
-                    return CheckResult.UNKNOWN
+        if (
+            'Properties' in conf.keys()
+            and 'Engine' in conf['Properties'].keys()
+            and 'aurora' in conf['Properties']['Engine']
+        ):
+            return CheckResult.UNKNOWN
         # Database is not Aurora; Use base class implementation
         return super().scan_resource_conf(conf)
 

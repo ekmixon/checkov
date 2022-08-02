@@ -12,19 +12,33 @@ class AzureInstancePassword(BaseResourceCheck):
 
     def scan_resource_conf(self, conf):
         if "properties" in conf:
-            if "storageProfile" in conf["properties"]:
-                if "imageReference" in conf["properties"]["storageProfile"]:
-                    if "publisher" in conf["properties"]["storageProfile"]["imageReference"]:
-                        if "windows" in conf["properties"]["storageProfile"]["imageReference"]["publisher"].lower():
-                            # This check is not relevant to Windows systems
-                            return CheckResult.PASSED
+            if (
+                "storageProfile" in conf["properties"]
+                and "imageReference" in conf["properties"]["storageProfile"]
+                and "publisher"
+                in conf["properties"]["storageProfile"]["imageReference"]
+                and "windows"
+                in conf["properties"]["storageProfile"]["imageReference"][
+                    "publisher"
+                ].lower()
+            ):
+                # This check is not relevant to Windows systems
+                return CheckResult.PASSED
 
-            if "osProfile" in conf["properties"]:
-                if "linuxConfiguration" in conf["properties"]["osProfile"]:
-                    if conf["properties"]["osProfile"]["linuxConfiguration"] != None and \
-                            "disablePasswordAuthentication" in conf["properties"]["osProfile"]["linuxConfiguration"]:
-                        if str(conf["properties"]["osProfile"]["linuxConfiguration"]["disablePasswordAuthentication"]).lower() == "true":
-                            return CheckResult.PASSED
+            if (
+                "osProfile" in conf["properties"]
+                and "linuxConfiguration" in conf["properties"]["osProfile"]
+                and conf["properties"]["osProfile"]["linuxConfiguration"] != None
+                and "disablePasswordAuthentication"
+                in conf["properties"]["osProfile"]["linuxConfiguration"]
+                and str(
+                    conf["properties"]["osProfile"]["linuxConfiguration"][
+                        "disablePasswordAuthentication"
+                    ]
+                ).lower()
+                == "true"
+            ):
+                return CheckResult.PASSED
         return CheckResult.FAILED
 
 check = AzureInstancePassword()

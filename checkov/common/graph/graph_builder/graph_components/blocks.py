@@ -43,7 +43,7 @@ class Block:
             attribute_value = self.attributes[attribute_key]
             if isinstance(attribute_value, dict) or (isinstance(attribute_value, list) and len(attribute_value) > 0 and isinstance(attribute_value[0], dict)):
                 inner_attributes = get_inner_attributes(attribute_key, attribute_value)
-                attributes_to_add.update(inner_attributes)
+                attributes_to_add |= inner_attributes
         return attributes_to_add
 
     def __str__(self) -> str:
@@ -81,7 +81,7 @@ class Block:
                 attribute_value = attribute_value[0]
             if isinstance(attribute_value, (list, dict)):
                 inner_attributes = get_inner_attributes(attribute_key, attribute_value)
-                base_attributes.update(inner_attributes)
+                base_attributes |= inner_attributes
             if attribute_key == "self":
                 base_attributes["self_"] = attribute_value
                 continue
@@ -116,7 +116,7 @@ class Block:
     ) -> None:
         split_key = attribute_key.split(".")
         i = 1
-        curr_key = ".".join(split_key[0:i])
+        curr_key = ".".join(split_key[:i])
         if isinstance(nested_attributes, list):
             if curr_key.isnumeric():
                 curr_key_int = int(curr_key)
@@ -133,10 +133,10 @@ class Block:
         elif isinstance(nested_attributes, dict):
             while curr_key not in nested_attributes and i <= len(split_key):
                 i += 1
-                curr_key = ".".join(split_key[0:i])
+                curr_key = ".".join(split_key[:i])
             if attribute_key in nested_attributes.keys():
                 nested_attributes[attribute_key] = value_to_update
-            if len(split_key) == 1 and len(curr_key) > 0:
+            if len(split_key) == 1 and curr_key != "":
                 nested_attributes[curr_key] = value_to_update
             elif curr_key in nested_attributes.keys():
                 self.update_inner_attribute(".".join(split_key[i:]), nested_attributes[curr_key], value_to_update)
@@ -168,7 +168,7 @@ def get_inner_attributes(attribute_key: str, attribute_value: Union[str, List[st
             if key != "":
                 inner_key = f"{attribute_key}.{key}"
                 inner_value = attribute_value[key]
-                inner_attributes.update(get_inner_attributes(inner_key, inner_value))
+                inner_attributes |= get_inner_attributes(inner_key, inner_value)
                 inner_attributes[attribute_key][key] = inner_attributes[inner_key]
             else:
                 del attribute_value[key]

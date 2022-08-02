@@ -10,10 +10,12 @@ class MySQLServerSSLEnforcementEnabled(BaseResourceCheck):
         super().__init__(name=name, id=id, categories=categories, supported_resources=supported_resources)
 
     def scan_resource_conf(self, conf):
-        if "properties" in conf:
-            if "sslEnforcement" in conf["properties"]:
-                if str(conf["properties"]["sslEnforcement"]).lower() == "enabled":
-                    return CheckResult.PASSED
+        if (
+            "properties" in conf
+            and "sslEnforcement" in conf["properties"]
+            and str(conf["properties"]["sslEnforcement"]).lower() == "enabled"
+        ):
+            return CheckResult.PASSED
         return CheckResult.FAILED
 
 check = MySQLServerSSLEnforcementEnabled()

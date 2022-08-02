@@ -30,7 +30,7 @@ class DockerImageScanningIntegration:
         open(cli_file_name, 'wb').write(response.content)
         st = os.stat(cli_file_name)
         os.chmod(cli_file_name, st.st_mode | stat.S_IEXEC)
-        logging.debug(f'TwistCLI downloaded and has execute permission')
+        logging.debug('TwistCLI downloaded and has execute permission')
 
     def report_results(self, docker_image_name, dockerfile_path, dockerfile_content, twistcli_scan_result):
         headers = merge_dicts(

@@ -21,14 +21,14 @@ class ReadinessProbe(BaseK8Check):
         if "parent" in conf:
             if "Job" in conf["parent"]:
                 return CheckResult.PASSED
-            if "parent_metadata" in conf:
-                if "ownerReferences" in conf["parent_metadata"]:
-                    for ref in conf["parent_metadata"]["ownerReferences"]:
-                        if ref["kind"] == "Job":
-                            return CheckResult.PASSED
-        if "readinessProbe" not in conf:
-            return CheckResult.FAILED
-        return CheckResult.PASSED
+            if (
+                "parent_metadata" in conf
+                and "ownerReferences" in conf["parent_metadata"]
+            ):
+                for ref in conf["parent_metadata"]["ownerReferences"]:
+                    if ref["kind"] == "Job":
+                        return CheckResult.PASSED
+        return CheckResult.PASSED if "readinessProbe" in conf else CheckResult.FAILED
 
 
 check = ReadinessProbe()

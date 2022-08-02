@@ -16,16 +16,17 @@ class AllowedCapabilities(BaseK8Check):
         super().__init__(name=name, id=id, categories=categories, supported_entities=supported_kind)
 
     def get_resource_id(self, conf):
-        if "metadata" in conf:
-            if "name" in conf["metadata"]:
-                return 'PodSecurityPolicy.{}'.format(conf["metadata"]["name"])
+        if "metadata" in conf and "name" in conf["metadata"]:
+            return f'PodSecurityPolicy.{conf["metadata"]["name"]}'
         return 'PodSecurityPolicy.spec.allowedCapabilities'
 
     def scan_spec_conf(self, conf):
-        if "spec" in conf:
-            if "allowedCapabilities" in conf["spec"]:
-                if conf["spec"]["allowedCapabilities"]:
-                    return CheckResult.FAILED
+        if (
+            "spec" in conf
+            and "allowedCapabilities" in conf["spec"]
+            and conf["spec"]["allowedCapabilities"]
+        ):
+            return CheckResult.FAILED
         return CheckResult.PASSED
 
 check = AllowedCapabilities()

@@ -58,8 +58,7 @@ class NXGraphCheckParser(BaseGraphCheckParser):
 
     def _parse_raw_check(self, raw_check: Dict[str, Any], resources_types: Optional[List[str]]) -> BaseGraphCheck:
         check = BaseGraphCheck()
-        complex_operator = get_complex_operator(raw_check)
-        if complex_operator:
+        if complex_operator := get_complex_operator(raw_check):
             check.type = SolverType.COMPLEX
             check.operator = complex_operator
             sub_solvers = raw_check.get(complex_operator, [])
@@ -84,17 +83,14 @@ class NXGraphCheckParser(BaseGraphCheckParser):
                 check.resource_types = resource_type
 
             connected_resources_type = raw_check.get("connected_resource_types", [])
-            if connected_resources_type == ["All"] or connected_resources_type == "all":
+            if connected_resources_type in [["All"], "all"]:
                 check.connected_resources_types = resources_types
             else:
                 check.connected_resources_types = connected_resources_type
 
             condition_type = raw_check.get("cond_type", "")
             check.type = condition_type_to_solver_type.get(condition_type)
-            if condition_type == "":
-                check.operator = "any"
-            else:
-                check.operator = raw_check.get("operator")
+            check.operator = "any" if condition_type == "" else raw_check.get("operator")
             check.attribute = raw_check.get("attribute")
             check.attribute_value = raw_check.get("value")
 
@@ -103,9 +99,10 @@ class NXGraphCheckParser(BaseGraphCheckParser):
     def get_check_solver(self, check: BaseGraphCheck) -> BaseSolver:
         sub_solvers: List[BaseSolver] = []
         if check.sub_checks:
-            sub_solvers = []
-            for sub_solver in check.sub_checks:
-                sub_solvers.append(self.get_check_solver(sub_solver))
+            sub_solvers = [
+                self.get_check_solver(sub_solver)
+                for sub_solver in check.sub_checks
+            ]
 
         type_to_solver = {
             SolverType.COMPLEX_CONNECTION: operator_to_complex_connection_solver_classes.get(
@@ -125,14 +122,18 @@ class NXGraphCheckParser(BaseGraphCheckParser):
             ),
         }
 
-        solver = type_to_solver.get(check.type)
-        if not solver:
+        if solver := type_to_solver.get(check.type):
+            return solver
+        else:
             raise NotImplementedError(f"solver type {check.type} with operator {check.operator} is not supported")
-        return solver
 
 
 def get_complex_operator(raw_check: Dict[str, Any]) -> Optional[str]:
-    for operator in operators_to_complex_solver_classes.keys():
-        if raw_check.get(operator):
-            return operator
-    return None
+    return next(
+        (
+            operator
+            for operator in operators_to_complex_solver_classes.keys()
+            if raw_check.get(operator)
+        ),
+        None,
+    )

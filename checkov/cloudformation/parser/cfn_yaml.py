@@ -77,9 +77,12 @@ class NodeConstructor(SafeConstructor):
             if key in mapping:
                 raise CfnParseError(
                     self.filename,
-                    'Duplicate resource found "{}" (line {})'.format(
-                        key, key_node.start_mark.line + 1),
-                    key_node.start_mark.line, key_node.start_mark.column, key)
+                    f'Duplicate resource found "{key}" (line {key_node.start_mark.line + 1})',
+                    key_node.start_mark.line,
+                    key_node.start_mark.column,
+                    key,
+                )
+
             mapping[key] = value
 
         obj, = SafeConstructor.construct_yaml_map(self, node)
@@ -155,7 +158,7 @@ def multi_constructor(loader, tag_suffix, node):
     """
 
     if tag_suffix not in UNCONVERTED_SUFFIXES:
-        tag_suffix = '{}{}'.format(FN_PREFIX, tag_suffix)
+        tag_suffix = f'{FN_PREFIX}{tag_suffix}'
 
     constructor = None
     if tag_suffix == 'Fn::GetAtt':
@@ -167,7 +170,7 @@ def multi_constructor(loader, tag_suffix, node):
     elif isinstance(node, MappingNode):
         constructor = loader.construct_mapping
     else:
-        raise 'Bad tag: !{}'.format(tag_suffix)
+        raise f'Bad tag: !{tag_suffix}'
 
     return dict_node({tag_suffix: constructor(node)}, node.start_mark, node.end_mark)
 
@@ -182,7 +185,7 @@ def construct_getatt(node):
     if isinstance(node.value, list):
         return list_node([s.value for s in node.value], node.start_mark, node.end_mark)
 
-    raise ValueError('Unexpected node type: {}'.format(type(node.value)))
+    raise ValueError(f'Unexpected node type: {type(node.value)}')
 
 
 def loads(yaml_string, fname=None):

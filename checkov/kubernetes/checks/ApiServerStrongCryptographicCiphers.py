@@ -17,15 +17,14 @@ class ApiServerStrongCryptographicCiphers(BaseK8Check):
         return f'{conf["parent"]} - {conf["name"]}' if conf.get('name') else conf["parent"]
 
     def scan_spec_conf(self, conf):
-        if "command" in conf:
-            if "kube-apiserver" in conf["command"]:
-                for command in conf["command"]:
-                    if command.startswith("--tls-cipher-suites"):
-                        value = command.split("=")[1]    
-                        ciphers = value.split(",")
-                        for cipher in ciphers:
-                            if cipher not in strongCiphers:
-                                return CheckResult.FAILED
+        if "command" in conf and "kube-apiserver" in conf["command"]:
+            for command in conf["command"]:
+                if command.startswith("--tls-cipher-suites"):
+                    value = command.split("=")[1]    
+                    ciphers = value.split(",")
+                    for cipher in ciphers:
+                        if cipher not in strongCiphers:
+                            return CheckResult.FAILED
 
         return CheckResult.PASSED
 

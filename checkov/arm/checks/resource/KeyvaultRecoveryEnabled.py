@@ -13,11 +13,14 @@ class KeyVaultRecoveryEnabled(BaseResourceCheck):
 
     def scan_resource_conf(self, conf):
         # NOTE: enablePurgeProtection not supported in API version 2015-06-01
-        if "properties" in conf:
-            if "enablePurgeProtection" in conf["properties"] and "enableSoftDelete" in conf["properties"]:
-                if str(conf["properties"]["enablePurgeProtection"]).lower() == "true" and \
-                        str(conf["properties"]["enableSoftDelete"]).lower() == "true":
-                    return CheckResult.PASSED
+        if (
+            "properties" in conf
+            and "enablePurgeProtection" in conf["properties"]
+            and "enableSoftDelete" in conf["properties"]
+            and str(conf["properties"]["enablePurgeProtection"]).lower() == "true"
+            and str(conf["properties"]["enableSoftDelete"]).lower() == "true"
+        ):
+            return CheckResult.PASSED
         return CheckResult.FAILED
 
 check = KeyVaultRecoveryEnabled()

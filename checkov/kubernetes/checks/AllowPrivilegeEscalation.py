@@ -22,13 +22,13 @@ class AllowPrivilegeEscalation(BaseK8Check):
         return f'{conf["parent"]} - {conf["name"]}' if conf.get('name') else conf["parent"]
 
     def scan_spec_conf(self, conf):
-        if "securityContext" in conf:
-            if "allowPrivilegeEscalation" in conf["securityContext"]:
-                if conf["securityContext"]["allowPrivilegeEscalation"]:
-                    return CheckResult.FAILED
-            else:
-                return CheckResult.FAILED
-        else:
+        if "securityContext" not in conf:
+            return CheckResult.FAILED
+        if (
+            "allowPrivilegeEscalation" in conf["securityContext"]
+            and conf["securityContext"]["allowPrivilegeEscalation"]
+            or "allowPrivilegeEscalation" not in conf["securityContext"]
+        ):
             return CheckResult.FAILED
         return CheckResult.PASSED
 

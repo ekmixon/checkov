@@ -19,11 +19,10 @@ class GitGetter(BaseGetter):
         self.create_clone_and_res_dirs = create_clone_and_result_dirs
         self.tag = ''
 
-        search_tag = re.search(TAG_PATTERN, url)
-        if search_tag:
+        if search_tag := re.search(TAG_PATTERN, url):
             self.tag = search_tag.groupdict().get('tag')
             #remove tag/ or tags/ from ref= to get actual branch name
-            self.tag = re.sub('tag.*/','', self.tag)   
+            self.tag = re.sub('tag.*/','', self.tag)
         url = re.sub(TAG_PATTERN, '', url)
 
         super().__init__(url)
@@ -31,21 +30,26 @@ class GitGetter(BaseGetter):
     def do_get(self):
         if git_import_error is not None:
             raise ImportError("Unable to load git module (is the git executable available?)") \
-                from git_import_error
+                    from git_import_error
 
-        clone_dir = self.temp_dir + "/clone/" if self.create_clone_and_res_dirs else self.temp_dir
-        result_dir = self.temp_dir + "/result/"
+        clone_dir = (
+            f"{self.temp_dir}/clone/"
+            if self.create_clone_and_res_dirs
+            else self.temp_dir
+        )
+
+        result_dir = f"{self.temp_dir}/result/"
 
         if ".git//" in self.url:
             git_url, internal_dir = self.url.split(".git//")
-            self._clone(git_url + ".git", clone_dir, result_dir, internal_dir)
+            self._clone(f"{git_url}.git", clone_dir, result_dir, internal_dir)
         else:
             self._clone(self.url, clone_dir, result_dir)
 
         return result_dir
 
     def _clone(self, git_url, clone_dir, result_dir, internal_dir=''):
-        self.logger.debug("cloning {} to {}".format(self.url, clone_dir))
+        self.logger.debug(f"cloning {self.url} to {clone_dir}")
         if self.tag:
             Repo.clone_from(git_url, clone_dir, b=self.tag)
         else:

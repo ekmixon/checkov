@@ -30,13 +30,14 @@ def collect_skipped_checks(parse_result):
     ckv_to_bc_id_mapping = bc_integration.get_ckv_to_bc_id_mapping()
     if COMMENT_INSTRUCTION in parse_result:
         for comment in parse_result[COMMENT_INSTRUCTION]:
-            skip_search = re.search(COMMENT_REGEX, comment["value"])
-            if skip_search:
+            if skip_search := re.search(COMMENT_REGEX, comment["value"]):
                 skipped_check = {
-                    'id': skip_search.group(2),
-                    'suppress_comment': skip_search.group(3)[1:] if skip_search.group(
-                        3) else "No comment provided"
+                    'id': skip_search[2],
+                    'suppress_comment': skip_search[3][1:]
+                    if skip_search[3]
+                    else "No comment provided",
                 }
+
                 # No matter which ID was used to skip, save the pair of IDs in the appropriate fields
                 if bc_id_mapping and skipped_check["id"] in bc_id_mapping:
                     skipped_check["bc_id"] = skipped_check["id"]

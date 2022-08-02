@@ -17,17 +17,14 @@ class Secrets(BaseK8Check):
         return f'{conf["parent"]} - {conf["name"]}' if conf.get('name') else conf["parent"]
 
     def scan_spec_conf(self, conf):
-        if "env" in conf:
-            if conf["env"]:
-                for e in conf["env"]:
-                    if "valueFrom" in e:
-                        if "secretKeyRef" in e["valueFrom"]:
-                            return CheckResult.FAILED
-        if "envFrom" in conf:
-            if conf["envFrom"]:
-                for ef in conf["envFrom"]:
-                    if "secretRef" in ef:
-                        return CheckResult.FAILED
+        if "env" in conf and conf["env"]:
+            for e in conf["env"]:
+                if "valueFrom" in e and "secretKeyRef" in e["valueFrom"]:
+                    return CheckResult.FAILED
+        if "envFrom" in conf and conf["envFrom"]:
+            for ef in conf["envFrom"]:
+                if "secretRef" in ef:
+                    return CheckResult.FAILED
         return CheckResult.PASSED
 
 check = Secrets()

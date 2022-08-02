@@ -14,17 +14,19 @@ class StorageAccountsTransportEncryption(BaseResourceCheck):
         super().__init__(name=name, id=id, categories=categories, supported_resources=supported_resources)
 
     def scan_resource_conf(self, conf):
-        if "properties" in conf:
-            if "supportsHttpsTrafficOnly" in conf["properties"]:
-                if str(conf["properties"]["supportsHttpsTrafficOnly"]).lower() == "true":
-                    return CheckResult.PASSED
-                else:
-                    return CheckResult.FAILED
+        if (
+            "properties" in conf
+            and "supportsHttpsTrafficOnly" in conf["properties"]
+        ):
+            if str(conf["properties"]["supportsHttpsTrafficOnly"]).lower() == "true":
+                return CheckResult.PASSED
+            else:
+                return CheckResult.FAILED
 
         # Use default if supportsHttpsTrafficOnly is not set
         if "apiVersion" in conf:
             # Default for apiVersion 2019 and newer is supportsHttpsTrafficOnly = True
-            year = force_int(conf["apiVersion"][0:4])
+            year = force_int(conf["apiVersion"][:4])
 
             if year is None:
                 return CheckResult.UNKNOWN

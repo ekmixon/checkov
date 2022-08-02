@@ -19,11 +19,13 @@ class AllowedCapabilities(BaseK8Check):
         return f'{conf["parent"]} - {conf["name"]}' if conf.get('name') else conf["parent"]
 
     def scan_spec_conf(self, conf):
-        if conf.get("securityContext"):
-            if conf["securityContext"].get("capabilities"):
-                if conf["securityContext"]["capabilities"].get("add"):
-                    if conf["securityContext"]["capabilities"]["add"]:
-                        return CheckResult.FAILED
+        if (
+            conf.get("securityContext")
+            and conf["securityContext"].get("capabilities")
+            and conf["securityContext"]["capabilities"].get("add")
+            and conf["securityContext"]["capabilities"]["add"]
+        ):
+            return CheckResult.FAILED
         return CheckResult.PASSED
 
 

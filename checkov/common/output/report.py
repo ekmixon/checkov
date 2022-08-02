@@ -138,18 +138,11 @@ class Report:
         summary = self.get_summary()
         print(colored(f"{self.check_type} scan results:", "blue"))
         if self.parsing_errors:
-            message = "\nPassed checks: {}, Failed checks: {}, Skipped checks: {}, Parsing errors: {}\n".format(
-                summary["passed"],
-                summary["failed"],
-                summary["skipped"],
-                summary["parsing_errors"],
-            )
+            message = f'\nPassed checks: {summary["passed"]}, Failed checks: {summary["failed"]}, Skipped checks: {summary["skipped"]}, Parsing errors: {summary["parsing_errors"]}\n'
+
         else:
-            message = (
-                "\nPassed checks: {}, Failed checks: {}, Skipped checks: {}\n".format(
-                    summary["passed"], summary["failed"], summary["skipped"]
-                )
-            )
+            message = f'\nPassed checks: {summary["passed"]}, Failed checks: {summary["failed"]}, Skipped checks: {summary["skipped"]}\n'
+
         print(colored(message, "cyan"))
         if not is_quiet:
             for record in self.passed_checks:
@@ -190,7 +183,6 @@ class Report:
         print(xml_string)
 
     def get_sarif_json(self) -> Dict[str, Any]:
-        runs = []
         rules = []
         results = []
         for idx, record in enumerate(self.failed_checks):
@@ -228,24 +220,26 @@ class Report:
             rules.append(rule)
             results.append(result)
 
-        runs.append({
-            "tool": {
-                "driver": {
-                    "name": "checkov",
-                    "version": version,
-                    "informationUri": "https://github.com/bridgecrewio/checkov/",
-                    "rules": rules,
-                    "organization": "bridgecrew",
-                }
-            },
-            "results": results,
-        })
-        sarif_template_report = {
+        runs = [
+            {
+                "tool": {
+                    "driver": {
+                        "name": "checkov",
+                        "version": version,
+                        "informationUri": "https://github.com/bridgecrewio/checkov/",
+                        "rules": rules,
+                        "organization": "bridgecrew",
+                    }
+                },
+                "results": results,
+            }
+        ]
+
+        return {
             "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
             "version": "2.1.0",
             "runs": runs,
         }
-        return sarif_template_report
 
     def print_sarif_report(self) -> None:
         print(json.dumps(self.get_sarif_json()))
@@ -255,17 +249,17 @@ class Report:
         return to_xml_report_string(ts)
 
     def print_failed_github_md(self, use_bc_ids=False) -> None:
-        result = []
-        for record in self.failed_checks:
-            result.append(
-                [
-                    record.get_output_id(use_bc_ids),
-                    record.file_path,
-                    record.resource,
-                    record.check_name,
-                    record.guideline,
-                ]
-            )
+        result = [
+            [
+                record.get_output_id(use_bc_ids),
+                record.file_path,
+                record.resource,
+                record.check_name,
+                record.guideline,
+            ]
+            for record in self.failed_checks
+        ]
+
         print(
             tabulate(
                 result,
@@ -278,7 +272,6 @@ class Report:
 
     def get_test_suites(self, use_bc_ids=False) -> List[TestSuite]:
         test_cases = defaultdict(list)
-        test_suites = []
         records = self.passed_checks + self.failed_checks + self.skipped_checks
         for record in records:
             check_name = f"{record.get_output_id(use_bc_ids)}/{record.check_name}"
@@ -302,23 +295,22 @@ class Report:
                 )
 
             test_cases[check_name].append(test_case)
-        for key in test_cases.keys():
-            test_suites.append(
-                TestSuite(
-                    name=key,
-                    test_cases=test_cases[key],
-                    package=test_cases[key][0].classname,
-                )
+        return [
+            TestSuite(
+                name=key, test_cases=value, package=test_cases[key][0].classname
             )
-        return test_suites
+            for key, value in test_cases.items()
+        ]
 
     def print_json(self) -> None:
         print(self.get_json())
 
     def _count_resources(self) -> int:
-        unique_resources = set()
-        for record in self.passed_checks + self.failed_checks:
-            unique_resources.add(record.file_path + "." + record.resource)
+        unique_resources = {
+            f"{record.file_path}.{record.resource}"
+            for record in self.passed_checks + self.failed_checks
+        }
+
         return len(unique_resources)
 
     @staticmethod
@@ -327,8 +319,7 @@ class Report:
     ) -> "Report":
         # This enriches reports with the appropriate filepath, line numbers, and codeblock
         for record in report.failed_checks:
-            enriched_resource = enriched_resources.get(record.resource)
-            if enriched_resource:
+            if enriched_resource := enriched_resources.get(record.resource):
                 record.file_path = enriched_resource["scanned_file"]
                 record.file_line_range = enriched_resource["entity_lines_range"]
                 record.code_block = enriched_resource["entity_code_lines"]

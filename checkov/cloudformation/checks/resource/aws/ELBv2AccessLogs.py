@@ -11,13 +11,19 @@ class ELBv2AccessLogs(BaseResourceCheck):
         super().__init__(name=name, id=id, categories=categories, supported_resources=supported_resources)
 
     def scan_resource_conf(self, conf):
-        if 'Properties' in conf.keys():
-            if 'LoadBalancerAttributes' in conf['Properties'].keys():
-                if isinstance(conf['Properties']['LoadBalancerAttributes'], list):
-                    for item in conf['Properties']['LoadBalancerAttributes']:
-                        if 'Key' in item.keys() and 'Value' in item.keys():
-                            if item['Key'] == "access_logs.s3.enabled" and item['Value'] == "true":
-                                return CheckResult.PASSED
+        if (
+            'Properties' in conf.keys()
+            and 'LoadBalancerAttributes' in conf['Properties'].keys()
+            and isinstance(conf['Properties']['LoadBalancerAttributes'], list)
+        ):
+            for item in conf['Properties']['LoadBalancerAttributes']:
+                if (
+                    'Key' in item.keys()
+                    and 'Value' in item.keys()
+                    and item['Key'] == "access_logs.s3.enabled"
+                    and item['Value'] == "true"
+                ):
+                    return CheckResult.PASSED
         return CheckResult.FAILED
 
 

@@ -20,22 +20,24 @@ class IAMRoleAllowsPublicAssume(BaseResourceCheck):
                 if isinstance(assume_role_policy_doc, str):
                     assume_role_policy_doc = json.loads(assume_role_policy_doc)
                 if 'Statement' in assume_role_policy_doc:
-                        statements = assume_role_policy_doc['Statement']
-                        if isinstance(statements, list):
-                            for statement in statements:
-                                if 'Effect' in statement:
-                                    if statement['Effect'] == "Deny":
-                                        continue
-                                if 'Principal' in statement:
-                                    principal = statement['Principal']
-                                    if 'AWS' in principal:
-                                        aws_principals = principal['AWS']
-                                        if aws_principals == "*":
-                                            return CheckResult.FAILED
-                                        if isinstance(aws_principals, list):
-                                            for principal in aws_principals:
-                                                if principal == "*":
-                                                    return CheckResult.FAILED
+                    statements = assume_role_policy_doc['Statement']
+                    if isinstance(statements, list):
+                        for statement in statements:
+                            if (
+                                'Effect' in statement
+                                and statement['Effect'] == "Deny"
+                            ):
+                                continue
+                            if 'Principal' in statement:
+                                principal = statement['Principal']
+                                if 'AWS' in principal:
+                                    aws_principals = principal['AWS']
+                                    if aws_principals == "*":
+                                        return CheckResult.FAILED
+                                    if isinstance(aws_principals, list):
+                                        for principal in aws_principals:
+                                            if principal == "*":
+                                                return CheckResult.FAILED
         return CheckResult.PASSED
 
 

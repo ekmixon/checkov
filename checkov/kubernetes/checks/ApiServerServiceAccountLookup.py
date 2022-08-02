@@ -13,12 +13,17 @@ class ApiServerServiceAccountLookup(BaseK8Check):
         return f'{conf["parent"]} - {conf["name"]}' if conf.get('name') else conf["parent"]
 
     def scan_spec_conf(self, conf):
-        if conf.get("command") is not None:
-            if "kube-apiserver" in conf["command"]:
-                if "--service-account-lookup=false" in conf["command"] or "--service-account-lookup=true" not in conf["command"]:
-                    return CheckResult.FAILED
+        if (
+            conf.get("command") is not None
+            and "kube-apiserver" in conf["command"]
+            and (
+                "--service-account-lookup=false" in conf["command"]
+                or "--service-account-lookup=true" not in conf["command"]
+            )
+        ):
+            return CheckResult.FAILED
 
-           
+
         return CheckResult.PASSED
 
 check = ApiServerServiceAccountLookup()

@@ -239,8 +239,7 @@ class BcPlatformIntegration(object):
                                             'x-api-client': self.bc_source.name, 'x-api-checkov-version': checkov_version
                                             })
             response = json.loads(request.data.decode("utf8"))
-            url = response.get("url", None)
-            return url
+            return response.get("url", None)
         except HTTPError as e:
             logging.error(f"Failed to commit repository {self.repo_path}\n{e}")
             raise e
@@ -293,7 +292,7 @@ class BcPlatformIntegration(object):
     def get_checkov_mapping_metadata(self) -> dict:
         BC_SKIP_MAPPING = os.getenv("BC_SKIP_MAPPING","FALSE")
         if BC_SKIP_MAPPING.upper() == "TRUE":
-            logging.debug(f"Skipped mapping API call")
+            logging.debug("Skipped mapping API call")
             self.ckv_to_bc_id_mapping = {}
             return
         try:
@@ -302,7 +301,7 @@ class BcPlatformIntegration(object):
             self.guidelines = response["guidelines"]
             self.bc_id_mapping = response.get("idMapping")
             self.ckv_to_bc_id_mapping = {ckv_id: bc_id for (bc_id, ckv_id) in self.bc_id_mapping.items()}
-            logging.debug(f"Got checkov mappings from Bridgecrew BE")
+            logging.debug("Got checkov mappings from Bridgecrew BE")
         except Exception as e:
             logging.debug(f"Failed to get the guidelines from {self.guidelines_api_url}, error:\n{e}")
             self.ckv_to_bc_id_mapping = {}
@@ -339,12 +338,12 @@ class BcPlatformIntegration(object):
                     org = self._input_orgname()
                     print(Style.BRIGHT + colored("\nAmazing!"
                     "\nWe are now generating a personal API key to immediately enable some new features… ",'green', attrs=['bold']))
- 
+
                     bc_api_token, response = self.get_api_token(email, org)
                     self.bc_api_key = bc_api_token
                     if response.status_code == 200:
                         print(Style.BRIGHT + colored("\nComplete!",'green', attrs=['bold']))
-                        print('\nSaving API key to {}'.format(bridgecrew_file))
+                        print(f'\nSaving API key to {bridgecrew_file}')
                         print(Style.BRIGHT + colored("\nCheckov will automatically check this location for a key.  If you forget it you’ll find it here\nhttps://bridgecrew.cloud/integrations/api-token\n\n",'green'))
                         persist_key(self.bc_api_key)
                         print(Style.BRIGHT + colored("Checkov Dashboard is configured, opening https://bridgecrew.cloud to explore your new powers.", 'green', attrs=['bold']))
@@ -357,7 +356,7 @@ class BcPlatformIntegration(object):
                         print(Style.BRIGHT + colored("Or download our VS Code plugin:  https://github.com/bridgecrewio/checkov-vscode \n", 'cyan',attrs=['bold']))                  
 
                         print(Style.BRIGHT + colored( "Interested in contributing to Checkov as an open source developer.  We thought you’d never ask.  Check us out at: \nhttps://github.com/bridgecrewio/checkov/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22 \n", 'white', attrs=['bold']))   
-                       
+
                     else:
                         print(
                             Style.BRIGHT + colored("\nCould not create account, please try again on your next scan! \n",
@@ -382,11 +381,7 @@ class BcPlatformIntegration(object):
 # Added this to generate a default repo_id for cli scans for upload to the platform 
 # whilst also persisting a cli repo_id into the object
     def persist_bc_api_key(self, args):
-        if args.bc_api_key:
-            self.bc_api_key=args.bc_api_key
-        else: 
-            # get the key from file
-            self.bc_api_key=read_key()
+        self.bc_api_key = args.bc_api_key or read_key()
         return self.bc_api_key    
 
 # Added this to generate a default repo_id for cli scans for upload to the platform 
@@ -397,12 +392,12 @@ class BcPlatformIntegration(object):
                 self.repo_id = BC_FROM_BRANCH
             if args.directory:
                 basename = path.basename(os.path.abspath(args.directory[0]))
-                self.repo_id = "cli_repo/" + basename
+                self.repo_id = f"cli_repo/{basename}"
             if args.file:
                 # Get the base path of the file based on it's absolute path
                 basename = os.path.basename(os.path.dirname(os.path.abspath(args.file[0])))
-                self.repo_id = "cli_repo/" + basename
- 
+                self.repo_id = f"cli_repo/{basename}"
+
         else: 
             self.repo_id=args.repo_id
         return self.repo_id    
@@ -411,8 +406,7 @@ class BcPlatformIntegration(object):
         if BC_FROM_BRANCH:
             return BC_FROM_BRANCH
         basename = 'unnamed_repo' if path.basename(args.directory[0]) == '.' else path.basename(args.directory[0])
-        repo_id = "cli_repo/" + basename
-        return repo_id
+        return f"cli_repo/{basename}"
 
     def get_api_token(self, email, org):
         response = self._create_bridgecrew_account(email, org)
@@ -489,7 +483,7 @@ class BcPlatformIntegration(object):
             if re.search(EMAIL_PATTERN, email):
                 valid_email = True
             else:
-                print("email should match the following pattern: {}".format(EMAIL_PATTERN))
+                print(f"email should match the following pattern: {EMAIL_PATTERN}")
         return email
 
     @staticmethod

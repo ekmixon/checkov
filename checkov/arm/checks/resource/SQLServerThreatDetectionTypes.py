@@ -14,22 +14,27 @@ class SQLServerThreatDetectionTypes(BaseResourceCheck):
         super().__init__(name=name, id=id, categories=categories, supported_resources=supported_resources)
 
     def scan_resource_conf(self, conf):
-        if "resources" in conf:
-            if conf["resources"]:
-                for resource in conf["resources"]:
-                    if "type" in resource:
-                        if resource["type"] == "Microsoft.Sql/servers/databases/securityAlertPolicies" or \
-                                resource["type"] == "securityAlertPolicies":
-                            if "properties" in resource:
-                                if "state" in resource["properties"] and \
-                                        resource["properties"]["state"].lower() == "enabled":
-                                    if "disabledAlerts" in resource["properties"]:
-                                        if resource["properties"]["disabledAlerts"] == "" or \
-                                                resource["properties"]["disabledAlerts"] == None:
-                                            return CheckResult.PASSED
-                                    else:
-                                        return CheckResult.PASSED
+        if "resources" in conf and conf["resources"]:
+            for resource in conf["resources"]:
+                if (
+                    "type" in resource
+                    and resource["type"]
+                    in [
+                        "Microsoft.Sql/servers/databases/securityAlertPolicies",
+                        "securityAlertPolicies",
+                    ]
+                    and "properties" in resource
+                    and "state" in resource["properties"]
+                    and resource["properties"]["state"].lower() == "enabled"
+                ):
+                    if "disabledAlerts" not in resource["properties"]:
+                        return CheckResult.PASSED
 
+                    if (
+                        resource["properties"]["disabledAlerts"] == ""
+                        or resource["properties"]["disabledAlerts"] is None
+                    ):
+                        return CheckResult.PASSED
         return CheckResult.FAILED
 
 

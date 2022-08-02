@@ -12,10 +12,12 @@ class SecurityCenterStandardPricing(BaseResourceCheck):
         super().__init__(name=name, id=id, categories=categories, supported_resources=supported_resources)
 
     def scan_resource_conf(self, conf):
-        if "properties" in conf:
-            if "pricingTier" in conf["properties"]:
-                if str(conf["properties"]["pricingTier"]).lower() == "standard":
-                    return CheckResult.PASSED
+        if (
+            "properties" in conf
+            and "pricingTier" in conf["properties"]
+            and str(conf["properties"]["pricingTier"]).lower() == "standard"
+        ):
+            return CheckResult.PASSED
         return CheckResult.FAILED
 
 check = SecurityCenterStandardPricing()

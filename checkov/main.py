@@ -129,10 +129,15 @@ def run(banner=checkov_banner, argv=sys.argv[1:]):
     else:
         logger.debug('No API key found. Scanning locally only.')
 
-    if config.check and config.skip_check:
-        if any(item in runner_filter.checks for item in runner_filter.skip_checks):
-            parser.error("The check ids specified for '--check' and '--skip-check' must be mutually exclusive.")
-            return
+    if (
+        config.check
+        and config.skip_check
+        and any(
+            item in runner_filter.checks for item in runner_filter.skip_checks
+        )
+    ):
+        parser.error("The check ids specified for '--check' and '--skip-check' must be mutually exclusive.")
+        return
 
     integration_feature_registry.run_pre_scan()
 
@@ -140,8 +145,7 @@ def run(banner=checkov_banner, argv=sys.argv[1:]):
     if not config.no_guide:
         guidelines = bc_integration.get_guidelines()
 
-        ckv_to_bc_mapping = bc_integration.get_ckv_to_bc_id_mapping()
-        if ckv_to_bc_mapping:
+        if ckv_to_bc_mapping := bc_integration.get_ckv_to_bc_id_mapping():
             all_checks = BaseCheckRegistry.get_all_registered_checks()
             for check in all_checks:
                 check.bc_id = ckv_to_bc_mapping.get(check.id)
@@ -180,8 +184,7 @@ def run(banner=checkov_banner, argv=sys.argv[1:]):
                 with open(created_baseline_path, 'w') as f:
                     json.dump(overall_baseline.to_dict(), f, indent=4)
             exit_codes.append(runner_registry.print_reports(scan_reports, config, url=url, created_baseline_path=created_baseline_path, baseline=baseline))
-        exit_code = 1 if 1 in exit_codes else 0
-        return exit_code
+        return 1 if 1 in exit_codes else 0
     elif config.file:
         scan_reports = runner_registry.run(external_checks_dir=external_checks_dir, files=config.file,
                                            guidelines=guidelines,

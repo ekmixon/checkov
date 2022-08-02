@@ -14,14 +14,16 @@ class KubeControllerManagerBlockProfiles(BaseK8Check):
         return f'{conf["parent"]} - {conf["name"]}' if conf.get('name') else conf["parent"]
 
     def scan_spec_conf(self, conf):
-        if conf.get("command") is not None:
-            if "kube-controller-manager" in conf["command"]:
-                for command in conf["command"]:
-                    if command.startswith('--profiling'):
-                        value = command.split("=")[1]
-                        if value == 'false':
-                            return CheckResult.PASSED
-                return CheckResult.FAILED
+        if (
+            conf.get("command") is not None
+            and "kube-controller-manager" in conf["command"]
+        ):
+            for command in conf["command"]:
+                if command.startswith('--profiling'):
+                    value = command.split("=")[1]
+                    if value == 'false':
+                        return CheckResult.PASSED
+            return CheckResult.FAILED
         return CheckResult.PASSED
 
 

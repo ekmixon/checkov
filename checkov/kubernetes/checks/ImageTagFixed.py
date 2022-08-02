@@ -24,22 +24,18 @@ class ImageTagFixed(BaseK8Check):
         return f'{conf["parent"]} - {conf["name"]}' if conf.get('name') else conf["parent"]
 
     def scan_spec_conf(self, conf):
-        if "image" in conf:
-
-            image_val = conf["image"]
-            if not isinstance(image_val, str) or image_val.strip() == '':
-                return CheckResult.UNKNOWN
-
-            # If there's a digest, then this is even better than the tag, so the check passes
-            if '@' in image_val:
-                return CheckResult.PASSED
-
-            (image, tag) = re.findall(DOCKER_IMAGE_REGEX, image_val)[0]
-            if tag == "latest" or tag == "":
-                return CheckResult.FAILED
-        else:
+        if "image" not in conf:
             return CheckResult.FAILED
-        return CheckResult.PASSED
+        image_val = conf["image"]
+        if not isinstance(image_val, str) or image_val.strip() == '':
+            return CheckResult.UNKNOWN
+
+        # If there's a digest, then this is even better than the tag, so the check passes
+        if '@' in image_val:
+            return CheckResult.PASSED
+
+        (image, tag) = re.findall(DOCKER_IMAGE_REGEX, image_val)[0]
+        return CheckResult.FAILED if tag in ["latest", ""] else CheckResult.PASSED
 
 
 check = ImageTagFixed()

@@ -62,10 +62,14 @@ class SuppressionsIntegration(BaseIntegrationFeature):
         :param suppressions:
         :return:
         """
-        for suppression in suppressions:
-            if self._check_suppression(record, suppression):
-                return suppression
-        return None
+        return next(
+            (
+                suppression
+                for suppression in suppressions
+                if self._check_suppression(record, suppression)
+            ),
+            None,
+        )
 
     def _check_suppression(self, record, suppression):
         """
@@ -87,10 +91,13 @@ class SuppressionsIntegration(BaseIntegrationFeature):
             # But checking here adds some resiliency against bugs if that changes.
             return self.bc_integration.repo_id in suppression['accountIds']
         elif type == 'Resources':
-            for resource in suppression['resources']:
-                if resource['accountId'] == self.bc_integration.repo_id and resource['resourceId'] == f'{record.repo_file_path}:{record.resource}':
-                    return True
-            return False
+            return any(
+                resource['accountId'] == self.bc_integration.repo_id
+                and resource['resourceId']
+                == f'{record.repo_file_path}:{record.resource}'
+                for resource in suppression['resources']
+            )
+
         elif type == 'Tags':
             entity_tags = record.entity_tags
             if not entity_tags:
@@ -137,11 +144,10 @@ class SuppressionsIntegration(BaseIntegrationFeature):
         if policyId not in self.bc_integration.bc_id_mapping and not self.custom_policy_id_regex.match(policyId):
             return False
 
-        if suppression['suppressionType'] == 'Accounts':
-            if self.bc_integration.repo_id not in suppression['accountIds']:
-                return False
-
-        return True
+        return (
+            suppression['suppressionType'] != 'Accounts'
+            or self.bc_integration.repo_id in suppression['accountIds']
+        )
 
 
 integration = SuppressionsIntegration(bc_integration)

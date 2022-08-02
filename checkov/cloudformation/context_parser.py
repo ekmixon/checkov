@@ -35,10 +35,9 @@ class ContextParser(object):
             default_value = self.cf_template.get("Parameters", {}).get(refname, {}).get("Default")
             if default_value is not None:
                 logging.debug(
-                    "Replacing Ref {} in file {} with default parameter value: {}".format(
-                        refname, self.cf_file, default_value
-                    )
+                    f"Replacing Ref {refname} in file {self.cf_file} with default parameter value: {default_value}"
                 )
+
                 self._set_in_dict(self.cf_template, ref, default_value)
 
                 ## TODO - Add Variable Eval Message for Output
@@ -47,7 +46,7 @@ class ContextParser(object):
 
     @staticmethod
     def extract_cf_resource_id(cf_resource: dict_node, cf_resource_name: str_node) -> Optional[str]:
-        if cf_resource_name == STARTLINE or cf_resource_name == ENDLINE:
+        if cf_resource_name in [STARTLINE, ENDLINE]:
             return None
         if "Type" not in cf_resource:
             # This is not a CloudFormation resource, skip
@@ -57,8 +56,7 @@ class ContextParser(object):
     def extract_cf_resource_code_lines(
         self, cf_resource: dict_node
     ) -> Tuple[Optional[List[int]], Optional[List[Tuple[int, str]]]]:
-        find_lines_result_set = set(self.find_lines(cf_resource, STARTLINE))
-        if len(find_lines_result_set) >= 1:
+        if find_lines_result_set := set(self.find_lines(cf_resource, STARTLINE)):
             start_line = min(find_lines_result_set)
             end_line = max(self.find_lines(cf_resource, ENDLINE))
 
@@ -104,14 +102,12 @@ class ContextParser(object):
 
         if isinstance(node, list):
             for i in node:
-                for x in ContextParser.find_lines(i, kv):
-                    yield x
+                yield from ContextParser.find_lines(i, kv)
         elif isinstance(node, dict):
             if kv in node:
                 yield node[kv]
             for j in node.values():
-                for x in ContextParser.find_lines(j, kv):
-                    yield x
+                yield from ContextParser.find_lines(j, kv)
 
     @staticmethod
     def collect_skip_comments(entity_code_lines: List[Tuple[int, str]]) -> List[_SkippedCheck]:
@@ -119,12 +115,14 @@ class ContextParser(object):
         bc_id_mapping = bc_integration.get_id_mapping()
         ckv_to_bc_id_mapping = bc_integration.get_ckv_to_bc_id_mapping()
         for line in entity_code_lines:
-            skip_search = re.search(COMMENT_REGEX, str(line))
-            if skip_search:
+            if skip_search := re.search(COMMENT_REGEX, str(line)):
                 skipped_check: _SkippedCheck = {
-                    "id": skip_search.group(2),
-                    "suppress_comment": skip_search.group(3)[1:] if skip_search.group(3) else "No comment provided",
+                    "id": skip_search[2],
+                    "suppress_comment": skip_search[3][1:]
+                    if skip_search[3]
+                    else "No comment provided",
                 }
+
                 # No matter which ID was used to skip, save the pair of IDs in the appropriate fields
                 if bc_id_mapping and skipped_check["id"] in bc_id_mapping:
                     skipped_check["bc_id"] = skipped_check["id"]

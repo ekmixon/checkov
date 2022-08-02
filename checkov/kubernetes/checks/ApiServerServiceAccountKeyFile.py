@@ -15,19 +15,18 @@ class ApiServerServiceAccountKeyFile(BaseK8Check):
         return f'{conf["parent"]} - {conf["name"]}' if conf.get('name') else conf["parent"]
 
     def scan_spec_conf(self, conf):
-        if "command" in conf:
-            if "kube-apiserver" in conf["command"]:
-                for cmd in conf["command"]:
-                    if cmd == "--service-account-key-file":
-                        return CheckResult.FAILED
-                    if "=" in cmd:
-                        [field,value,*_] = cmd.split("=")
-                        if field == "--service-account-key-file":
-                            # should be a valid path and to end with .pem
-                            regex = r"^([\/|\.\/]?[a-z_\-\s0-9\.]+)+\.(pem)$"
-                            matches = re.match(regex, value)
-                            if not matches:
-                                return CheckResult.FAILED                            
+        if "command" in conf and "kube-apiserver" in conf["command"]:
+            for cmd in conf["command"]:
+                if cmd == "--service-account-key-file":
+                    return CheckResult.FAILED
+                if "=" in cmd:
+                    [field,value,*_] = cmd.split("=")
+                    if field == "--service-account-key-file":
+                        # should be a valid path and to end with .pem
+                        regex = r"^([\/|\.\/]?[a-z_\-\s0-9\.]+)+\.(pem)$"
+                        matches = re.match(regex, value)
+                        if not matches:
+                            return CheckResult.FAILED
         return CheckResult.PASSED
 
 check = ApiServerServiceAccountKeyFile()

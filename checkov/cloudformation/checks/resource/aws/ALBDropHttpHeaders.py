@@ -12,14 +12,9 @@ class ALBDropHttpHeaders(BaseResourceCheck):
         super().__init__(name=name, id=id, categories=categories, supported_resources=supported_resources)
 
     def scan_resource_conf(self, conf):
-        # ALB is default loadbalancer type if not explicitly set
-        alb = True
-        
         properties = conf.get("Properties")
         lb_type = properties.get("Type")
-        if lb_type != None and lb_type != 'application':
-            alb = False
-
+        alb = lb_type in [None, 'application']
         # If lb is alb then drop headers must be present and true 
         if alb:
             lb_attributes = properties.get('LoadBalancerAttributes', {})
