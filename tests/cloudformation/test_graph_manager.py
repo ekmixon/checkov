@@ -16,15 +16,15 @@ class TestCloudformationGraphManager(TestCase):
         local_graph, definitions = graph_manager.build_graph_from_source_directory(root_dir, render_variables=False)
 
         expected_resources_by_file = {
-            "/tags.yaml": [
+            os.path.join(root_dir, "tags.yaml"): [
                 "AWS::S3::Bucket.DataBucket",
                 "AWS::S3::Bucket.NoTags",
                 "AWS::EKS::Nodegroup.EKSClusterNodegroup",
                 "AWS::AutoScaling::AutoScalingGroup.TerraformServerAutoScalingGroup"],
-            "/cfn_newline_at_end.yaml": [
+            os.path.join(root_dir, "cfn_newline_at_end.yaml"): [
                 "AWS::RDS::DBInstance.MyDB",
                 "AWS::S3::Bucket.MyBucket"],
-            "/success.json": [
+            os.path.join(root_dir, "success.json"): [
                 "AWS::S3::Bucket.acmeCWSBucket",
                 "AWS::S3::Bucket.acmeCWSBucket2",
                 "AWS::S3::BucketPolicy.acmeCWSBucketPolicy",
@@ -56,12 +56,20 @@ class TestCloudformationGraphManager(TestCase):
         self.assertDictEqual({'Fn::Join': ['', [{'Ref': 'ResourceNamePrefix', '__startline__': 650, '__endline__': 652}, '-acmecws']], '__startline__': 646, '__endline__': 656}, sqs_queue_vertex.attributes["QueueName"])
 
     def test_build_graph_from_source_directory_with_rendering(self):
-            root_dir = os.path.realpath(os.path.join(TEST_DIRNAME, "./runner/resources"))
-            graph_manager = CloudformationGraphManager(db_connector=NetworkxConnector())
-            local_graph, definitions = graph_manager.build_graph_from_source_directory(root_dir, render_variables=True)
+        root_dir = os.path.realpath(os.path.join(TEST_DIRNAME, "./runner/resources"))
+        graph_manager = CloudformationGraphManager(db_connector=NetworkxConnector())
+        local_graph, definitions = graph_manager.build_graph_from_source_directory(root_dir, render_variables=True)
 
-            sqs_queue_vertex = local_graph.vertices[local_graph.vertices_block_name_map[BlockType.RESOURCE]["AWS::SQS::Queue.acmeCWSQueue"][0]]
-            self.assertDictEqual({'Fn::Join': ['', ['acme', '-acmecws']], '__startline__': 646, '__endline__': 656}, sqs_queue_vertex.attributes["QueueName"])
+        sqs_queue_vertex = local_graph.vertices[local_graph.vertices_block_name_map[BlockType.RESOURCE]["AWS::SQS::Queue.acmeCWSQueue"][0]]
+        expected_node = {'Fn::Join': ['', ['acme', '-acmecws']], '__startline__': 646, '__endline__': 656}
+        self.assertDictEqual(expected_node, sqs_queue_vertex.config["QueueName"])
+        found = False
+        for d in definitions:
+            if 'resources/success.json' in d:
+                found = True
+                node = definitions[d]['Resources']['acmeCWSQueue']['Properties']['QueueName']
+                self.assertDictEqual(expected_node, node)
+        self.assertTrue(found, 'Did not find the wanted node, for acmeCWSQueue')
 
     def test_build_graph_from_definitions(self):
         relative_file_path = "./checks/resource/aws/example_APIGatewayXray/APIGatewayXray-PASSED.yaml"

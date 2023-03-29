@@ -1,11 +1,13 @@
+import json
 import logging
+import os
 from typing import Optional, List
 
 from checkov.cloudformation import cfn_utils
-from checkov.cloudformation.cfn_utils import create_file_abs_path, create_definitions, build_definitions_context
+from checkov.cloudformation.cfn_utils import create_definitions, build_definitions_context
 from checkov.cloudformation.checks.resource.registry import cfn_registry
 from checkov.cloudformation.context_parser import ContextParser
-from checkov.cloudformation.graph_builder.graph_components.block_types import CloudformationTemplateSections
+from checkov.cloudformation.parser.cfn_keywords import TemplateSections
 from checkov.cloudformation.graph_builder.graph_to_definitions import convert_graph_vertices_to_definitions
 from checkov.cloudformation.graph_builder.local_graph import CloudformationLocalGraph
 from checkov.cloudformation.graph_manager import CloudformationGraphManager
@@ -63,6 +65,17 @@ class Runner(BaseRunner):
             self.graph_manager.save_graph(local_graph)
             self.definitions, self.breadcrumbs = convert_graph_vertices_to_definitions(local_graph.vertices, root_folder)
 
+        # TODO: replace with real graph rendering
+        for cf_file in self.definitions.keys():
+            file_definition = self.definitions.get(cf_file, None)
+            file_definition_raw = self.definitions_raw.get(cf_file, None)
+            if file_definition is not None and file_definition_raw is not None:
+                cf_context_parser = ContextParser(cf_file, file_definition, file_definition_raw)
+                logging.debug(
+                    "Template Dump for {}: {}".format(cf_file, json.dumps(file_definition, indent=2, default=str))
+                )
+                cf_context_parser.evaluate_default_refs()
+
         # run checks
         self.check_definitions(root_folder, runner_filter, report)
 
@@ -73,17 +86,17 @@ class Runner(BaseRunner):
         return report
 
     def check_definitions(self, root_folder, runner_filter, report):
-        for cf_file, definition in self.definitions.items():
+        for file_abs_path, definition in self.definitions.items():
 
-            file_abs_path = create_file_abs_path(root_folder, cf_file)
+            cf_file = f"/{os.path.relpath(file_abs_path, root_folder)}"
 
-            if isinstance(definition, dict) and CloudformationTemplateSections.RESOURCES in definition.keys():
-                for resource_name, resource in definition[CloudformationTemplateSections.RESOURCES].items():
+            if isinstance(definition, dict) and TemplateSections.RESOURCES in definition.keys():
+                for resource_name, resource in definition[TemplateSections.RESOURCES].items():
                     resource_id = ContextParser.extract_cf_resource_id(resource, resource_name)
                     # check that the resource can be parsed as a CF resource
                     if resource_id:
                         resource_context = self.context[file_abs_path][
-                            CloudformationTemplateSections.RESOURCES][resource_name]
+                            TemplateSections.RESOURCES][resource_name]
                         entity_lines_range = [resource_context['start_line'], resource_context['end_line']]
                         entity_code_lines = resource_context['code_lines']
                         if entity_lines_range and entity_code_lines:
@@ -117,9 +130,10 @@ class Runner(BaseRunner):
         for check, check_results in checks_results.items():
             for check_result in check_results:
                 entity = check_result["entity"]
-                entity_file_abs_path = create_file_abs_path(root_folder, entity.get(CustomAttributes.FILE_PATH))
+                entity_file_abs_path = entity.get(CustomAttributes.FILE_PATH)
+                entity_file_path = scanned_file = f"/{os.path.relpath(entity_file_abs_path, root_folder)}"
                 entity_name = entity.get(CustomAttributes.BLOCK_NAME).split(".")[1]
-                entity_context = self.context[entity_file_abs_path][CloudformationTemplateSections.RESOURCES][
+                entity_context = self.context[entity_file_abs_path][TemplateSections.RESOURCES][
                     entity_name
                 ]
 
@@ -128,7 +142,7 @@ class Runner(BaseRunner):
                     check_name=check.name,
                     check_result=check_result,
                     code_block=entity_context.get("code_lines"),
-                    file_path=entity.get(CustomAttributes.FILE_PATH),
+                    file_path=entity_file_path,
                     file_line_range=[entity_context.get("start_line"), entity_context.get("end_line")],
                     resource=entity.get(CustomAttributes.ID),
                     evaluations={},
